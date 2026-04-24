@@ -1,0 +1,332 @@
+<template>
+  <div class="template-floral">
+    <div class="floral-bg"></div>
+    <div class="floral-overlay"></div>
+    
+    <!-- COVER -->
+    <div v-if="!isOpen" class="cover-floral">
+      <div class="cover-card">
+        <div class="floral-border">
+          <div class="cover-icon">🌸</div>
+          <h2 class="cover-subtitle">Pernikahan</h2>
+          <h1 class="cover-title">{{ props.wedding.nama_pria }}<br>&<br>{{ props.wedding.nama_wanita }}</h1>
+          <p class="cover-date">{{ formatDate(props.wedding.akad_date) }}</p>
+          <p class="cover-guest">Kepada Yth.<br><strong>{{ displayGuestName }}</strong></p>
+          <button class="btn-open" @click="openEnvelope">💐 Buka Undangan</button>
+        </div>
+        <button class="music-toggle" @click="toggleMusic" :class="{ playing: isPlaying }">
+          {{ isPlaying ? '🔊' : '🔇' }}
+        </button>
+      </div>
+    </div>
+    
+    <!-- ISI -->
+    <div v-else class="content-floral">
+      <div class="container">
+        <div class="top-actions">
+          <button class="icon-btn" @click="toggleMusic">{{ isPlaying ? '🔊' : '🔈' }}</button>
+        </div>
+        
+        <div class="bismillah">﷽</div>
+        
+        <h1 class="nama">{{ props.wedding.nama_pria }} & {{ props.wedding.nama_wanita }}</h1>
+        <p class="orangtua">{{ props.wedding.orangtua_pria || '...' }} & {{ props.wedding.orangtua_wanita || '...' }}</p>
+        
+        <!-- COUNTDOWN -->
+        <div class="countdown-box">
+          <h3>⏳ Menuju Hari Bahagia</h3>
+          <div class="countdown-grid">
+            <div class="countdown-item"><span>{{ countdown.days }}</span><label>Hari</label></div>
+            <div class="countdown-item"><span>{{ countdown.hours }}</span><label>Jam</label></div>
+            <div class="countdown-item"><span>{{ countdown.minutes }}</span><label>Menit</label></div>
+          </div>
+        </div>
+
+        <!-- NAMA TAMU -->
+        <div class="guest-section">
+          <p>Yang terhormat</p>
+          <p class="guest-name-display">{{ displayGuestName }}</p>
+        </div>
+        
+        <!-- AKAD -->
+        <div class="event-card">
+          <div class="event-icon">💍</div>
+          <h3>Akad Nikah</h3>
+          <p>📆 {{ formatDate(props.wedding.akad_date) }}</p>
+          <p>🕐 {{ formatTime(props.wedding.akad_time) }}</p>
+          <p>📍 {{ props.wedding.akad_location }}</p>
+          <button class="btn-map" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Maps</button>
+        </div>
+        
+        <!-- RESEPSI -->
+        <div class="event-card" v-if="props.wedding.resepsi_date">
+          <div class="event-icon">🎉</div>
+          <h3>Resepsi</h3>
+          <p>📆 {{ formatDate(props.wedding.resepsi_date) }}</p>
+          <p>🕐 {{ formatTime(props.wedding.resepsi_time) }}</p>
+          <p>📍 {{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
+        </div>
+        
+        <!-- GALLERY -->
+        <div class="gallery-scroll" v-if="props.theme.gallery?.length">
+          <img v-for="(img, i) in props.theme.gallery" :key="i" :src="img" @click="openLightbox(i)" />
+        </div>
+        
+        <!-- GIFT REGISTRY -->
+        <div class="gift-section" v-if="gifts.length > 0">
+          <h3>🎁 Kirim Kado</h3>
+          <div class="gift-grid">
+            <div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }">
+              <img v-if="gift.image" :src="gift.image" class="gift-img" />
+              <div class="gift-content">
+                <h4>{{ gift.name }}</h4>
+                <p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
+                <p v-if="gift.status" class="dibeli-badge">✅ Sudah Dibeli</p>
+                <a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a>
+              </div>
+              <!-- FORM INPUT RESI -->
+              <div v-if="props.guestSlug && !gift.status" class="resi-form">
+                <p class="resi-title">📦 Sudah beli? Input resi di sini:</p>
+                <div class="resi-input-group">
+                  <input v-model="gift.resiInput" placeholder="Nomor Resi (contoh: JNE123)" />
+                  <button @click="claimGift(gift)" :disabled="gift.claiming" class="btn-klaim">
+                    {{ gift.claiming ? '...' : '🌸 Klaim' }}
+                  </button>
+                </div>
+              </div>
+              <div v-if="gift.buyer_name" class="buyer-info">
+                ✅ Dibeli oleh: <strong>{{ gift.buyer_name }}</strong>
+                <span v-if="gift.resi"> | 📦 {{ gift.resi }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- AMPLOP -->
+        <div class="gift-box" v-if="props.wedding.rekening">
+          <h3>💝 Amplop Digital</h3>
+          <pre>{{ props.wedding.rekening }}</pre>
+          <button @click="copyRekening">📋 Salin Rekening</button>
+        </div>
+        
+        <!-- RSVP -->
+        <div class="rsvp-box">
+          <h3>Konfirmasi Kehadiran</h3>
+          <div class="rsvp-options">
+            <button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }">✅ Hadir</button>
+            <button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }">❌ Tidak</button>
+          </div>
+          <button @click="submitRsvp" :disabled="submitting" class="btn-submit">Kirim Konfirmasi</button>
+        </div>
+        
+        <!-- MESSAGES -->
+        <div class="messages-box">
+          <h3>💬 Ucapan & Doa</h3>
+          <div class="msg-list">
+            <div v-for="msg in messages" :key="msg.id" class="msg-item">
+              <strong>{{ msg.nama_pengirim }}</strong>
+              <p>{{ msg.pesan }}</p>
+              <small>{{ formatTime(msg.created_at) }}</small>
+            </div>
+          </div>
+          <div class="msg-form">
+            <input v-model="newMessage.nama" placeholder="Nama Anda" />
+            <textarea v-model="newMessage.pesan" placeholder="Tulis ucapan & doa..." rows="2"></textarea>
+            <button @click="sendMessage" :disabled="sendingMessage">💬 Kirim Doa</button>
+          </div>
+        </div>
+        
+        <p class="footer">🌸 Terima kasih atas doa & kehadirannya 🌸</p>
+      </div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div v-if="lightboxOpen" class="lightbox" @click="lightboxOpen = false">
+      <img :src="props.theme.gallery[lightboxIndex]" />
+      <button class="close-lightbox">✕</button>
+    </div>
+
+    <!-- AUDIO -->
+    <audio ref="bgMusic" loop><source :src="props.theme.music_url" type="audio/mpeg"></audio>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { supabase } from '../../lib/supabase'
+import confetti from 'canvas-confetti'
+
+const props = defineProps({ wedding: Object, theme: Object, guestName: String, guestSlug: String })
+
+const isOpen = ref(false)
+const isPlaying = ref(false)
+const bgMusic = ref(null)
+const rsvpStatus = ref(null)
+const submitting = ref(false)
+const messages = ref([])
+const sendingMessage = ref(false)
+const gifts = ref([])
+const lightboxOpen = ref(false)
+const lightboxIndex = ref(0)
+const newMessage = reactive({ nama: '', pesan: '' })
+
+const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
+
+const countdown = reactive({ days: 0, hours: 0, minutes: 0 })
+let interval = null
+
+const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
+const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
+const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
+
+const updateCountdown = () => {
+  if (!props.wedding.akad_date) return
+  const diff = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`).getTime() - Date.now()
+  if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = 0; return }
+  countdown.days = Math.floor(diff / 86400000)
+  countdown.hours = Math.floor((diff % 86400000) / 3600000)
+  countdown.minutes = Math.floor((diff % 3600000) / 60000)
+}
+
+const openEnvelope = async () => {
+  isOpen.value = true
+  confetti({ particleCount: 150, spread: 80, colors: ['#fbcfe8', '#f9a8d4', '#f472b6'] })
+  if (bgMusic.value && props.theme.music_url) {
+    try { await bgMusic.value.play(); isPlaying.value = true } catch {}
+  }
+}
+
+const toggleMusic = () => {
+  if (!bgMusic.value) return
+  isPlaying.value ? bgMusic.value.pause() : bgMusic.value.play()
+  isPlaying.value = !isPlaying.value
+}
+
+const openMaps = (loc) => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank')
+const openLightbox = (i) => { lightboxIndex.value = i; lightboxOpen.value = true }
+const copyRekening = () => { navigator.clipboard.writeText(props.wedding.rekening); alert('✅ Rekening disalin!') }
+
+const submitRsvp = async () => {
+  if (!props.guestSlug) return alert('Link tidak valid')
+  submitting.value = true
+  await supabase.from('guests').update({ status_hadir: rsvpStatus.value, jumlah_orang: 1 }).eq('unique_slug', props.guestSlug)
+  submitting.value = false
+  alert('🌸 Terima kasih!')
+}
+
+const loadMessages = async () => {
+  const { data } = await supabase.from('messages').select('*').eq('wedding_id', props.wedding.id).order('created_at', { ascending: false }).limit(20)
+  messages.value = data || []
+}
+
+const sendMessage = async () => {
+  if (!newMessage.nama || !newMessage.pesan) return alert('Isi nama dan pesan')
+  sendingMessage.value = true
+  await supabase.from('messages').insert([{ wedding_id: props.wedding.id, nama_pengirim: newMessage.nama, pesan: newMessage.pesan }])
+  newMessage.nama = newMessage.pesan = ''
+  await loadMessages()
+  sendingMessage.value = false
+}
+
+const loadGifts = async () => {
+  const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id)
+  gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false }))
+}
+
+const claimGift = async (gift) => {
+  if (!gift.resiInput || !gift.resiInput.trim()) return alert('❌ Masukkan nomor resi terlebih dahulu')
+  gift.claiming = true
+  try {
+    const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single()
+    await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id)
+    gift.status = true; gift.buyer_name = props.guestName || 'Anda'; gift.resi = gift.resiInput
+    alert('🌸 Kado berhasil diklaim! Terima kasih!')
+  } catch (err) {
+    alert('❌ Gagal klaim kado: ' + (err.message || 'Coba lagi'))
+  } finally {
+    gift.claiming = false
+  }
+}
+
+onMounted(async () => {
+  updateCountdown(); interval = setInterval(updateCountdown, 1000)
+  await loadMessages()
+  await loadGifts()
+})
+onUnmounted(() => clearInterval(interval))
+</script>
+
+<style scoped>
+.template-floral { min-height: 100vh; position: relative; font-family: 'Poppins', sans-serif; }
+.floral-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="8" fill="%23fbcfe8" opacity="0.3"/><circle cx="80" cy="30" r="10" fill="%23f9a8d4" opacity="0.2"/></svg>') center/200px; z-index: -1; }
+.floral-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,240,245,0.95)); z-index: -1; }
+.cover-floral { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.cover-card { position: relative; }
+.floral-border { border: 3px solid #fbcfe8; border-radius: 35px; padding: 40px 30px; text-align: center; background: white; box-shadow: 0 20px 50px rgba(244,114,182,0.15); max-width: 420px; }
+.cover-icon { font-size: 50px; margin-bottom: 15px; }
+.cover-subtitle { font-size: 14px; letter-spacing: 4px; color: #f472b6; text-transform: uppercase; }
+.cover-title { font-size: 38px; margin: 20px 0; color: #831843; line-height: 1.3; }
+.cover-date { font-size: 16px; color: #9d174d; margin-bottom: 30px; }
+.cover-guest { margin: 30px 0; color: #831843; }
+.cover-guest strong { font-size: 22px; display: block; margin-top: 8px; }
+.btn-open { background: linear-gradient(135deg, #f472b6, #ec4899); color: white; border: none; padding: 16px 50px; border-radius: 50px; font-size: 16px; cursor: pointer; margin-top: 20px; }
+.music-toggle { position: absolute; bottom: -20px; right: -10px; background: white; border: none; font-size: 24px; padding: 12px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); cursor: pointer; }
+.content-floral { min-height: 100vh; padding: 30px 15px; display: flex; justify-content: center; }
+.container { max-width: 480px; width: 100%; text-align: center; }
+.top-actions { text-align: right; margin-bottom: 15px; }
+.icon-btn { background: rgba(255,255,255,0.8); border: none; font-size: 22px; padding: 10px; border-radius: 50%; cursor: pointer; }
+.bismillah { font-size: 40px; opacity: 0.5; margin-bottom: 25px; color: #831843; }
+.nama { font-size: 34px; color: #831843; font-family: 'Playfair Display', serif; }
+.orangtua { font-size: 14px; color: #9d174d; opacity: 0.8; margin-bottom: 35px; }
+.countdown-box { background: linear-gradient(135deg, rgba(251,207,232,0.3), rgba(249,168,212,0.3)); padding: 25px; border-radius: 25px; margin: 30px 0; }
+.countdown-box h3 { color: #831843; margin-bottom: 15px; }
+.countdown-grid { display: flex; justify-content: center; gap: 15px; }
+.countdown-item { background: white; padding: 15px; border-radius: 18px; min-width: 70px; box-shadow: 0 5px 15px rgba(244,114,182,0.1); }
+.countdown-item span { display: block; font-size: 28px; font-weight: 700; color: #ec4899; }
+.countdown-item label { font-size: 11px; color: #9d174d; }
+.guest-section { margin: 30px 0; }
+.guest-name-display { font-size: 24px; font-weight: 700; color: #ec4899; font-family: 'Playfair Display', serif; margin-top: 8px; }
+.event-card { background: white; padding: 22px; border-radius: 22px; margin: 20px 0; border: 1px solid #fbcfe8; box-shadow: 0 8px 20px rgba(244,114,182,0.08); }
+.event-icon { font-size: 36px; margin-bottom: 8px; }
+.event-card h3 { color: #831843; margin-bottom: 12px; }
+.event-card p { margin: 5px 0; color: #9d174d; }
+.btn-map { background: #f472b6; color: white; border: none; padding: 10px 15px; border-radius: 50px; margin-top: 10px; cursor: pointer; width: 100%; font-weight: 600; }
+.gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; margin: 25px 0; }
+.gallery-scroll img { width: 200px; height: 250px; object-fit: cover; border-radius: 18px; border: 3px solid #fbcfe8; cursor: pointer; }
+.gift-section { margin: 30px 0; }
+.gift-grid { display: grid; gap: 15px; }
+.gift-card { background: white; border-radius: 18px; overflow: hidden; border: 1px solid #fbcfe8; }
+.gift-card.dibeli { opacity: 0.7; }
+.gift-img { width: 100%; height: 180px; object-fit: cover; }
+.gift-content { padding: 18px; }
+.gift-price { font-size: 18px; font-weight: 700; color: #ec4899; margin: 8px 0; }
+.dibeli-badge { color: #059669; font-weight: 600; }
+.btn-buy { display: inline-block; background: linear-gradient(135deg, #f472b6, #ec4899); color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 600; margin-top: 8px; }
+/* FORM RESI - DIBUAT JELAS */
+.resi-form { padding: 15px; background: #fff5f9; border-top: 2px solid #f472b6; margin-top: 10px; }
+.resi-title { font-size: 13px; color: #831843; margin-bottom: 10px; font-weight: 600; }
+.resi-input-group { display: flex; gap: 8px; }
+.resi-input-group input { flex: 1; padding: 10px; border: 2px solid #fbcfe8; border-radius: 10px; font-size: 14px; }
+.resi-input-group input:focus { border-color: #f472b6; outline: none; }
+.btn-klaim { background: #059669; color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-klaim:disabled { opacity: 0.6; }
+.buyer-info { padding: 12px 18px; background: #e8f5e9; font-size: 13px; color: #2e7d32; }
+.gift-box { background: white; padding: 22px; border-radius: 22px; margin: 20px 0; border: 1px solid #fbcfe8; }
+.gift-box pre { background: #fdf2f8; padding: 12px; border-radius: 12px; text-align: left; margin: 12px 0; color: #831843; }
+.gift-box button { background: linear-gradient(135deg, #f472b6, #ec4899); color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-weight: 600; }
+.rsvp-box { background: white; padding: 22px; border-radius: 22px; margin: 20px 0; border: 1px solid #fbcfe8; }
+.rsvp-options { display: flex; gap: 10px; margin: 15px 0; }
+.rsvp-options button { flex: 1; padding: 12px; border: 2px solid #fbcfe8; background: white; border-radius: 50px; cursor: pointer; color: #831843; font-weight: 600; }
+.rsvp-options button.active { background: #f472b6; color: white; border-color: #f472b6; }
+.btn-submit { width: 100%; padding: 12px; background: linear-gradient(135deg, #f472b6, #ec4899); color: white; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; margin-top: 10px; }
+.messages-box { background: white; padding: 22px; border-radius: 22px; margin: 20px 0; border: 1px solid #fbcfe8; text-align: left; }
+.msg-list { max-height: 200px; overflow-y: auto; margin: 12px 0; }
+.msg-item { padding: 10px 0; border-bottom: 1px solid #fbcfe8; color: #831843; }
+.msg-form { display: flex; flex-direction: column; gap: 8px; }
+.msg-form input, .msg-form textarea { padding: 10px; border: 2px solid #fbcfe8; border-radius: 12px; background: #fdf2f8; }
+.msg-form button { background: linear-gradient(135deg, #f472b6, #ec4899); color: white; border: none; padding: 10px; border-radius: 50px; cursor: pointer; font-weight: 600; }
+.footer { margin-top: 40px; color: #f472b6; font-style: italic; }
+.lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.lightbox img { max-width: 90%; max-height: 90%; border-radius: 15px; }
+.close-lightbox { position: absolute; top: 20px; right: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+</style>

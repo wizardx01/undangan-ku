@@ -1,0 +1,102 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f2f5;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+button.primary {
+  background: #9b87f5;
+  color: white;
+}
+
+button.primary:hover {
+  background: #7e69e0;
+}
+
+button.secondary {
+  background: white;
+  color: #9b87f5;
+  border: 1px solid #9b87f5;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  margin-top: 8px;
+}
+
+label {
+  display: block;
+  margin-top: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Base mobile-first styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Dashboard responsive */
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column !important;
+  }
+  
+  .panel-kiri, .panel-kanan {
+    width: 100% !important;
+    padding: 15px !important;
+  }
+  
+  .mockup-hp {
+    width: 320px !important;
+    height: 650px !important;
+  }
+}
+
+/* Wedding view responsive */
+@media (max-width: 480px) {
+  .content-card {
+    padding: 20px 15px !important;
+    border-radius: 30px !important;
+  }
+  
+  .wedding-title {
+    font-size: 28px !important;
+  }
+  
+  .guest-name-display {
+    font-size: 24px !important;
+  }
+  
+  .countdown-grid {
+    gap: 8px !important;
+  }
+  
+  .countdown-item {
+    min-width: 60px !important;
+    padding: 10px 5px !important;
+  }
+  
+  .countdown-value {
+    font-size: 24px !important;
+  }
+}
