@@ -17,10 +17,10 @@
       <div class="plan-badge" :class="user?.plan || 'basic'">{{ planLimits.name }}</div>
       <div class="plan-limits">
         <span>📋 {{ weddings.length }}/{{ planLimits.maxWeddings === Infinity ? '∞' : planLimits.maxWeddings }}</span>
-        <span>👥 {{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }}</span>
-        <span>🎁 {{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }}</span>
+        <span title="Batas tamu per undangan">👥 Max {{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }}</span>
+        <span title="Batas kado per undangan">🎁 Max {{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }}</span>
       </div>
-      <button v-if="user?.plan === 'basic'" class="btn-upgrade" @click="upgradePlan">⬆️ Upgrade</button>
+      <button v-if="user?.plan === 'basic'" class="btn-upgrade" @click="upgradePlan">⬆️ Upgrade Premium (Rp 99rb)</button>
     </div>
 
     <!-- TOMBOL BUAT BARU -->
@@ -30,6 +30,7 @@
       </button>
       <span v-if="!canCreate" class="limit-text">
         ❌ Limit tercapai ({{ weddings.length }}/{{ planLimits.maxWeddings }})
+        <button @click="upgradePlan" class="btn-upgrade-inline">⬆️ Upgrade</button>
       </span>
     </div>
 
@@ -48,7 +49,7 @@
           <div class="wedding-details">
             <h3>{{ wedding.nama_pria }} & {{ wedding.nama_wanita || '' }}</h3>
             <p class="wedding-date">{{ formatDate(wedding.akad_date) }}</p>
-            <p class="wedding-type">{{ getEventLabel(wedding.event_type) }}</p>
+            <p class="wedding-template">🎨 {{ getTemplateLabel(wedding.template) }}</p>
             <div class="wedding-stats">
               <span>👥 {{ wedding.guest_count || 0 }} tamu</span>
               <span>🎁 {{ wedding.gift_count || 0 }} kado</span>
@@ -67,7 +68,6 @@
       </div>
     </div>
 
-    <!-- TOMBOL KEMBALI -->
     <button @click="router.push('/')" class="btn-back">← Kembali ke Beranda</button>
   </div>
 </template>
@@ -85,6 +85,9 @@ const planLimits = ref(getPlanLimits())
 const weddings = ref([])
 const loading = ref(true)
 
+// WhatsApp number (GANTI DENGAN NOMOR LO)
+const waNumber = '6281234567890'
+
 const canCreate = computed(() => {
   return planLimits.value.maxWeddings === Infinity || weddings.value.length < planLimits.value.maxWeddings
 })
@@ -96,12 +99,16 @@ const getEventIcon = (type) => {
   return icons[type] || '💍'
 }
 
-const getEventLabel = (type) => {
-  const labels = { wedding: '💍 Wedding', aqiqah: '👶 Aqiqah', syukuran: '🏠 Syukuran', sunatan: '✂️ Sunatan' }
-  return labels[type] || '💍 Wedding'
+const getTemplateLabel = (t) => {
+  const labels = { elegan: '💐 Elegan', minimalis: '✨ Minimalis', floral: '🌸 Floral' }
+  return labels[t] || '💐 Elegan'
 }
 
-const upgradePlan = () => alert('🔜 Hubungi admin untuk upgrade!')
+const upgradePlan = () => {
+  const email = user.value?.email || ''
+  const message = `Halo kak, saya mau upgrade ke PREMIUM (Rp 99.000).%0A%0A📧 Email: ${email}%0A📋 Paket: Premium%0A💰 Harga: Rp 99.000%0A%0AMohon info cara pembayarannya ya. Terima kasih! 🙏`
+  window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank')
+}
 
 const loadWeddings = async () => {
   loading.value = true
@@ -114,7 +121,6 @@ const loadWeddings = async () => {
     
     if (error) throw error
     
-    // Hitung tamu & kado per undangan
     for (const w of data) {
       const { count: guestCount } = await supabase.from('guests').select('*', { count: 'exact', head: true }).eq('wedding_id', w.id)
       const { count: giftCount } = await supabase.from('gifts').select('*', { count: 'exact', head: true }).eq('wedding_id', w.id).eq('status', true)
@@ -149,19 +155,15 @@ const copyLink = (slug) => {
   showSuccess('Link dicopy!')
 }
 
-const previewWedding = (slug) => {
-  window.open(`/wedding/${slug}`, '_blank')
-}
+const previewWedding = (slug) => window.open(`/wedding/${slug}`, '_blank')
 
 const deleteWedding = async (wedding) => {
   if (!confirm(`Hapus undangan "${wedding.nama_pria} & ${wedding.nama_wanita}"?\nSemua data tamu, pesan, dan kado akan ikut terhapus.`)) return
-  
   try {
     await supabase.from('gifts').delete().eq('wedding_id', wedding.id)
     await supabase.from('messages').delete().eq('wedding_id', wedding.id)
     await supabase.from('guests').delete().eq('wedding_id', wedding.id)
     await supabase.from('weddings').delete().eq('id', wedding.id)
-    
     weddings.value = weddings.value.filter(w => w.id !== wedding.id)
     showSuccess('Undangan dihapus!')
   } catch (err) {
@@ -171,6 +173,8 @@ const deleteWedding = async (wedding) => {
 
 const handleLogout = () => {
   localStorage.removeItem('session')
+  localStorage.removeItem('currentWeddingId')
+  localStorage.removeItem('currentSlug')
   router.push('/login')
 }
 
@@ -184,264 +188,53 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.list-dashboard {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 30px 20px;
-  min-height: 100vh;
-  background: #f5f7fa;
-}
+.list-dashboard { max-width: 800px; margin: 0 auto; padding: 30px 20px; min-height: 100vh; background: #f5f7fa; }
+.header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 24px; }
+.header h1 { font-size: 28px; color: #2c3e50; }
+.header p { color: #666; margin-top: 5px; }
+.header-actions { display: flex; gap: 10px; }
+.btn-settings { background: #f0f0f0; color: #555; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-logout { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
-}
-
-.header h1 {
-  font-size: 28px;
-  color: #2c3e50;
-}
-
-.header p {
-  color: #666;
-  margin-top: 5px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-settings {
-  background: #f0f0f0;
-  color: #555;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn-logout {
-  background: #fee2e2;
-  color: #ef4444;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.plan-info {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  padding: 15px 20px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.plan-badge {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: 13px;
-  text-transform: uppercase;
-}
-
+.plan-info { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 15px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.plan-badge { padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; text-transform: uppercase; }
 .plan-badge.basic { background: #f0f0f0; color: #666; }
 .plan-badge.premium { background: #9b87f5; color: white; }
 .plan-badge.enterprise { background: #2c3e50; color: white; }
+.plan-limits { display: flex; gap: 15px; font-size: 14px; font-weight: 500; }
+.btn-upgrade { margin-left: auto; padding: 8px 16px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
 
-.plan-limits {
-  display: flex;
-  gap: 15px;
-  font-size: 14px;
-  font-weight: 500;
-}
+.create-section { text-align: center; margin-bottom: 30px; }
+.btn-create { padding: 16px 40px; background: #9b87f5; color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-create:hover { background: #7e69e0; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(155,135,245,0.3); }
+.btn-create:disabled { opacity: 0.5; cursor: not-allowed; }
+.limit-text { display: block; margin-top: 10px; color: #ef4444; font-weight: 600; }
+.btn-upgrade-inline { background: #9b87f5; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-left: 8px; }
 
-.btn-upgrade {
-  margin-left: auto;
-  padding: 8px 16px;
-  background: #9b87f5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-}
+.loading { text-align: center; padding: 40px; color: #666; }
+.empty { text-align: center; padding: 60px 20px; color: #999; }
+.empty p { margin: 8px 0; }
 
-.create-section {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.btn-create {
-  padding: 16px 40px;
-  background: #9b87f5;
-  color: white;
-  border: none;
-  border-radius: 50px;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-create:hover {
-  background: #7e69e0;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(155,135,245,0.3);
-}
-
-.btn-create:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.limit-text {
-  display: block;
-  margin-top: 10px;
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-.empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-}
-
-.empty p {
-  margin: 8px 0;
-}
-
-.wedding-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.wedding-card {
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 15px;
-  transition: transform 0.2s;
-}
-
-.wedding-card:hover {
-  transform: translateY(-2px);
-}
-
-.wedding-info {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.wedding-icon {
-  font-size: 40px;
-}
-
-.wedding-details h3 {
-  margin-bottom: 5px;
-  color: #2c3e50;
-}
-
-.wedding-date {
-  font-size: 13px;
-  color: #666;
-}
-
-.wedding-type {
-  font-size: 12px;
-  color: #9b87f5;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
-.wedding-stats {
-  display: flex;
-  gap: 15px;
-  margin-top: 8px;
-  font-size: 13px;
-  color: #666;
-}
-
+.wedding-list { display: flex; flex-direction: column; gap: 16px; }
+.wedding-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; transition: transform 0.2s; }
+.wedding-card:hover { transform: translateY(-2px); }
+.wedding-info { display: flex; gap: 15px; align-items: center; }
+.wedding-icon { font-size: 40px; }
+.wedding-details h3 { margin-bottom: 5px; color: #2c3e50; }
+.wedding-date { font-size: 13px; color: #666; }
+.wedding-template { font-size: 12px; color: #9b87f5; font-weight: 600; margin-top: 4px; }
+.wedding-stats { display: flex; gap: 15px; margin-top: 8px; font-size: 13px; color: #666; }
 .status-active { color: #059669; }
 .status-inactive { color: #ef4444; }
 
-.wedding-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.wedding-actions button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
+.wedding-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.wedding-actions button { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; }
 .btn-edit { background: #e0e7ff; color: #4f46e5; }
-.btn-edit:hover { background: #c7d2fe; }
-
 .btn-copy { background: #f0f0f0; color: #555; }
-.btn-copy:hover { background: #e0e0e0; }
-
 .btn-preview { background: #dbeafe; color: #2563eb; }
-.btn-preview:hover { background: #bfdbfe; }
-
 .btn-delete { background: #fee2e2; color: #ef4444; }
-.btn-delete:hover { background: #fecaca; }
 
-.btn-back {
-  display: block;
-  width: 100%;
-  margin-top: 30px;
-  padding: 14px;
-  background: white;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
+.btn-back { display: block; width: 100%; margin-top: 30px; padding: 14px; background: white; color: #666; border: 1px solid #ddd; border-radius: 12px; font-weight: 600; cursor: pointer; }
 
-@media (max-width: 600px) {
-  .wedding-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .wedding-actions {
-    width: 100%;
-  }
-  
-  .wedding-actions button {
-    flex: 1;
-  }
-}
+@media (max-width: 600px) { .wedding-card { flex-direction: column; align-items: flex-start; } .wedding-actions { width: 100%; } .wedding-actions button { flex: 1; } }
 </style>

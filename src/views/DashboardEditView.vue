@@ -1,9 +1,7 @@
 <template>
   <div class="dashboard">
-    <!-- LOADING OVERLAY -->
     <LoadingSpinner v-if="saving || uploadingBg || uploadingGallery || uploadingMusic" fullscreen :text="loadingText" />
     
-    <!-- PANEL KIRI: FORM EDIT -->
     <div class="panel-kiri">
       <div class="header">
         <div>
@@ -17,280 +15,78 @@
         </div>
       </div>
 
-      <!-- PLAN INFO -->
       <div class="plan-info" v-if="user && user?.role !== 'admin'">
         <div class="plan-badge" :class="user?.plan || 'basic'">{{ planLimits.name }}</div>
         <div class="plan-limits">
-          <span>📋 {{ planLimits.maxWeddings === Infinity ? '∞' : planLimits.maxWeddings }}</span>
-          <span>👥 {{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }}</span>
-          <span>🎁 {{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }}</span>
+          <span>👥 {{ guestList.length }}/{{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }}</span>
+          <span>🎁 {{ giftList.length }}/{{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }}</span>
         </div>
-        <button v-if="user?.plan === 'basic'" class="btn-upgrade" @click="upgradePlan">⬆️ Upgrade ke Premium</button>
+        <button v-if="user?.plan === 'basic'" class="btn-upgrade" @click="upgradePlan">⬆️ Upgrade Premium (Rp 99rb)</button>
       </div>
 
       <form @submit.prevent="saveWedding">
-        <!-- DATA DASAR -->
-        <div class="section">
-          <h3>📋 Data Mempelai</h3>
-          <label>Nama Mempelai Pria *</label>
-          <input v-model="form.nama_pria" placeholder="Contoh: Budi Santoso, S.Kom" />
-          <label>Nama Mempelai Wanita *</label>
-          <input v-model="form.nama_wanita" placeholder="Contoh: Ani Lestari, S.Pd" />
-        </div>
+        <div class="section"><h3>📋 Data Mempelai</h3><label>Nama Pria *</label><input v-model="form.nama_pria" placeholder="Budi Santoso" /><label>Nama Wanita *</label><input v-model="form.nama_wanita" placeholder="Ani Lestari" /></div>
+        <div class="section"><h3>👨‍👩‍👧 Orang Tua</h3><label>Orang Tua Pria</label><input v-model="form.orangtua_pria" /><label>Orang Tua Wanita</label><input v-model="form.orangtua_wanita" /></div>
+        <div class="section"><h3>💍 Akad</h3><div class="form-row"><input type="date" v-model="form.akad_date" /><input type="time" v-model="form.akad_time" /></div><label>Lokasi *</label><textarea v-model="form.akad_location" rows="2"></textarea></div>
+        <div class="section"><h3>🎉 Resepsi</h3><div class="form-row"><input type="date" v-model="form.resepsi_date" /><input type="time" v-model="form.resepsi_time" /></div><label>Lokasi</label><textarea v-model="form.resepsi_location" rows="2"></textarea></div>
+        <div class="section"><h3>💳 Rekening</h3><textarea v-model="form.rekening" rows="3" placeholder="BCA: 123456789 a/n Budi"></textarea></div>
 
-        <!-- ORANG TUA -->
         <div class="section">
-          <h3>👨‍👩‍👧 Orang Tua</h3>
-          <label>Orang Tua Pria</label>
-          <input v-model="form.orangtua_pria" placeholder="Bapak ... & Ibu ..." />
-          <label>Orang Tua Wanita</label>
-          <input v-model="form.orangtua_wanita" placeholder="Bapak ... & Ibu ..." />
-        </div>
-
-        <!-- AKAD -->
-        <div class="section">
-          <h3>💍 Akad Nikah</h3>
-          <div class="form-row"><input type="date" v-model="form.akad_date" /><input type="time" v-model="form.akad_time" /></div>
-          <label>Lokasi Akad *</label>
-          <textarea v-model="form.akad_location" rows="2"></textarea>
-        </div>
-        
-        <!-- RESEPSI -->
-        <div class="section">
-          <h3>🎉 Resepsi</h3>
-          <div class="form-row"><input type="date" v-model="form.resepsi_date" /><input type="time" v-model="form.resepsi_time" /></div>
-          <label>Lokasi Resepsi</label>
-          <textarea v-model="form.resepsi_location" rows="2"></textarea>
-        </div>
-
-        <!-- REKENING -->
-        <div class="section">
-          <h3>💳 Rekening (Opsional)</h3>
-          <textarea v-model="form.rekening" rows="3" placeholder="BCA: 123456789 a/n Budi"></textarea>
-        </div>
-
-        <!-- TEMPLATE -->
-        <div class="section">
-          <h3>🎨 Pilih Template</h3>
+          <h3>🎨 Template</h3>
           <div class="template-selector">
-            <div class="template-option" :class="{ active: form.template === 'elegan' }" @click="form.template = 'elegan'">
-              <div class="template-preview elegan">💐</div><label>Elegan</label>
-            </div>
-            <div class="template-option" :class="{ active: form.template === 'minimalis' }" @click="form.template = 'minimalis'">
-              <div class="template-preview minimalis">✨</div><label>Minimalis</label>
-            </div>
-            <div class="template-option" :class="{ active: form.template === 'floral' }" @click="form.template = 'floral'">
-              <div class="template-preview floral">🌸</div><label>Floral</label>
-            </div>
+            <div class="template-option" :class="{ active: form.template === 'elegan' }" @click="form.template = 'elegan'"><div class="template-preview elegan">💐</div><label>Elegan</label></div>
+            <div class="template-option" :class="{ active: form.template === 'minimalis' }" @click="form.template = 'minimalis'"><div class="template-preview minimalis">✨</div><label>Minimalis</label></div>
+            <div class="template-option" :class="{ active: form.template === 'floral' }" @click="form.template = 'floral'"><div class="template-preview floral">🌸</div><label>Floral</label></div>
           </div>
         </div>
 
-        <!-- KUSTOMISASI -->
-        <div class="section">
-          <h3>🎨 Kustomisasi</h3>
-          <label>Warna</label>
-          <div class="color-row"><input type="color" v-model="form.theme.primary_color" /></div>
-          <label>Font</label>
-          <select v-model="form.theme.font_family"><option>Poppins, sans-serif</option><option>'Playfair Display', serif</option><option>'Dancing Script', cursive</option></select>
-          <label>Background</label>
-          <select v-model="form.theme.background_type" @change="handleBgChange"><option value="solid">Warna</option><option value="image">Gambar</option></select>
-          <div v-if="form.theme.background_type === 'solid'"><input type="color" v-model="form.theme.background_value" /></div>
-          <div v-if="form.theme.background_type === 'image'">
-            <input type="file" @change="uploadBackground" accept="image/*" />
-            <div v-if="uploadingBg" class="loading-inline">⏳ Mengupload...</div>
-            <img v-if="form.theme.background_value" :src="form.theme.background_value" class="preview-bg" />
-          </div>
-        </div>
+        <div class="section"><h3>🎨 Kustomisasi</h3><label>Warna</label><div class="color-row"><input type="color" v-model="form.theme.primary_color" /></div><label>Font</label><select v-model="form.theme.font_family"><option>Poppins, sans-serif</option><option>'Playfair Display', serif</option><option>'Dancing Script', cursive</option></select><label>Background</label><select v-model="form.theme.background_type" @change="handleBgChange"><option value="solid">Warna</option><option value="image">Gambar</option></select><div v-if="form.theme.background_type === 'solid'"><input type="color" v-model="form.theme.background_value" /></div><div v-if="form.theme.background_type === 'image'"><input type="file" @change="uploadBackground" accept="image/*" /><img v-if="form.theme.background_value" :src="form.theme.background_value" class="preview-bg" /></div></div>
 
-        <!-- GALERI -->
-        <div class="section">
-          <h3>🖼️ Galeri</h3>
-          <input type="file" @change="uploadGallery" accept="image/*" multiple />
-          <div v-if="uploadingGallery" class="loading-inline">⏳ {{ uploadProgress }}</div>
-          <div class="gallery-preview">
-            <div v-for="(img, idx) in form.gallery" :key="idx" class="gallery-item"><img :src="img" /><button @click="removeImage(idx)">✕</button></div>
-          </div>
-        </div>
+        <div class="section"><h3>🖼️ Galeri</h3><input type="file" @change="uploadGallery" accept="image/*" multiple /><div v-if="uploadingGallery" class="loading-inline">⏳ {{ uploadProgress }}</div><div class="gallery-preview"><div v-for="(img, idx) in form.gallery" :key="idx" class="gallery-item"><img :src="img" /><button @click="removeImage(idx)">✕</button></div></div></div>
 
-        <!-- MUSIK -->
-        <div class="section">
-          <h3>🎵 Musik</h3>
-          <input type="file" @change="uploadMusic" accept="audio/*" />
-          <div v-if="uploadingMusic" class="loading-inline">⏳ Upload...</div>
-          <label>Atau URL</label>
-          <input v-model="form.theme.music_url" placeholder="https://..." />
-        </div>
+        <div class="section"><h3>🎵 Musik</h3><input type="file" @change="uploadMusic" accept="audio/*" /><div v-if="uploadingMusic" class="loading-inline">⏳ Upload...</div><label>Atau URL</label><input v-model="form.theme.music_url" placeholder="https://..." /></div>
 
-        <!-- TOMBOL -->
-        <div class="action-buttons">
-          <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? '⏳' : '💾' }} {{ currentWeddingId ? 'Update' : 'Simpan' }}</button>
-          <button type="button" class="btn-secondary" @click="resetForm">🔄 Reset</button>
-        </div>
+        <div class="action-buttons"><button type="submit" class="btn-primary" :disabled="saving">{{ saving ? '⏳' : '💾' }} {{ currentWeddingId ? 'Update' : 'Simpan' }}</button><button type="button" class="btn-secondary" @click="resetForm">🔄 Reset</button></div>
 
-        <!-- LINK -->
-        <div v-if="savedSlug" class="result-link">
-          <h3>✅ Link Undangan</h3>
-          <div class="link-box"><code>{{ baseUrl }}/wedding/{{ savedSlug }}</code><button @click="copyMainLink">📋</button></div>
-          <button @click="previewWedding" class="preview-btn">👁️ Preview</button>
-        </div>
+        <div v-if="savedSlug" class="result-link"><h3>✅ Link Undangan</h3><div class="link-box"><code>{{ baseUrl }}/wedding/{{ savedSlug }}</code><button @click="copyMainLink">📋</button></div><button @click="previewWedding" class="preview-btn">👁️ Preview</button></div>
 
-        <!-- GIFT MONITOR -->
         <div v-if="savedSlug && giftList.length > 0" class="gift-summary-box">
           <div class="gift-summary-header"><h3>🎁 Monitor Kado</h3><button @click="loadGiftList" class="btn-refresh" :disabled="loadingGifts">🔄</button></div>
-          <div class="gift-summary-stats">
-            <div class="stat-item"><span class="stat-value">{{ giftList.length }}</span><span class="stat-label">Total</span></div>
-            <div class="stat-item"><span class="stat-value highlight">{{ purchasedGiftsCount }}</span><span class="stat-label">Dibeli</span></div>
-            <div class="stat-item"><span class="stat-value">{{ availableGiftsCount }}</span><span class="stat-label">Tersedia</span></div>
-          </div>
-          <div v-if="recentlyPurchasedGifts.length > 0" class="recent-purchases">
-            <h4>🆕 Pembelian Terbaru</h4>
-            <div v-for="gift in recentlyPurchasedGifts.slice(0, 3)" :key="gift.id" class="recent-item">
-              <span>✅ {{ gift.name }}</span><span>oleh {{ gift.buyer_name }}</span><span v-if="gift.resi">📦 {{ gift.resi }}</span>
-            </div>
-          </div>
+          <div class="gift-summary-stats"><div class="stat-item"><span class="stat-value">{{ giftList.length }}</span><span class="stat-label">Total</span></div><div class="stat-item"><span class="stat-value highlight">{{ purchasedGiftsCount }}</span><span class="stat-label">Dibeli</span></div><div class="stat-item"><span class="stat-value">{{ availableGiftsCount }}</span><span class="stat-label">Tersedia</span></div></div>
+          <div v-if="recentlyPurchasedGifts.length > 0" class="recent-purchases"><h4>🆕 Pembelian Terbaru</h4><div v-for="gift in recentlyPurchasedGifts.slice(0, 3)" :key="gift.id" class="recent-item"><span>✅ {{ gift.name }}</span><span>oleh {{ gift.buyer_name }}</span><span v-if="gift.resi">📦 {{ gift.resi }}</span></div></div>
         </div>
 
-        <!-- TAMU -->
         <div class="section" v-if="savedSlug">
           <h3>👥 Tamu ({{ guestList.length }}/{{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }})</h3>
           <div class="guest-form-box" v-if="canAddMoreGuests">
-            <div class="form-row">
-              <input v-model="newGuest.name" placeholder="Nama Tamu *" @keyup.enter="addGuest" />
-              <input v-model="newGuest.nickname" placeholder="Panggilan" style="max-width:130px" />
-            </div>
-            <div class="form-row">
-              <select v-model="newGuest.category"><option>Keluarga</option><option>Teman</option><option>Kolega</option><option>VIP</option></select>
-              <input type="number" v-model="newGuest.seats" min="1" max="10" placeholder="Kursi" style="max-width:80px" />
-            </div>
+            <div class="form-row"><input v-model="newGuest.name" placeholder="Nama Tamu *" @keyup.enter="addGuest" /><input v-model="newGuest.nickname" placeholder="Panggilan" style="max-width:130px" /></div>
+            <div class="form-row"><select v-model="newGuest.category"><option>Keluarga</option><option>Teman</option><option>Kolega</option><option>VIP</option></select><input type="number" v-model="newGuest.seats" min="1" max="10" placeholder="Kursi" style="max-width:80px" /></div>
             <button @click="addGuest" class="btn-add-guest">➕ Tambah</button>
           </div>
-          <div v-else class="limit-reached"><p>❌ Limit! ({{ guestList.length }}/{{ planLimits.maxGuests }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade</button></div>
+          <div v-else class="limit-reached"><p>❌ Limit tamu! ({{ guestList.length }}/{{ planLimits.maxGuests }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade Premium</button></div>
 
-          <div class="csv-section" v-if="canAddMoreGuests">
-            <h4>📄 Import CSV</h4>
-            <p class="csv-hint">Format: Nama,Panggilan,Kategori,Kursi</p>
-            <div class="csv-upload-area">
-              <input type="file" @change="handleCSVUpload" accept=".csv" ref="csvInput" />
-              <button @click="$refs.csvInput.click()" class="btn-choose-csv">📂 Pilih CSV</button>
-            </div>
-            <div v-if="csvPreview.length > 0" class="csv-preview">
-              <div class="csv-preview-header"><h5>Preview ({{ csvPreview.length }})</h5><button @click="clearCSVPreview" class="btn-clear-csv">✕</button></div>
-              <div class="csv-preview-list">
-                <div v-for="(item, idx) in csvPreview.slice(0, 5)" :key="idx" class="csv-preview-item"><span>{{ item.name }}</span><span>{{ item.category }} | {{ item.seats }} kursi</span></div>
-                <p v-if="csvPreview.length > 5">...dan {{ csvPreview.length - 5 }} lainnya</p>
-              </div>
-              <button @click="importCSV" class="btn-import-csv">✅ Import {{ csvPreview.length }} Tamu</button>
-            </div>
+          <div class="csv-section" v-if="canAddMoreGuests"><h4>📄 Import CSV</h4><p class="csv-hint">Format: Nama,Panggilan,Kategori,Kursi</p><div class="csv-upload-area"><input type="file" @change="handleCSVUpload" accept=".csv" ref="csvInput" /><button @click="$refs.csvInput.click()" class="btn-choose-csv">📂 Pilih CSV</button></div>
+            <div v-if="csvPreview.length > 0" class="csv-preview"><div class="csv-preview-header"><h5>Preview ({{ csvPreview.length }})</h5><button @click="clearCSVPreview" class="btn-clear-csv">✕</button></div><div class="csv-preview-list"><div v-for="(item, idx) in csvPreview.slice(0, 5)" :key="idx" class="csv-preview-item"><span>{{ item.name }}</span><span>{{ item.category }} | {{ item.seats }} kursi</span></div><p v-if="csvPreview.length > 5">...dan {{ csvPreview.length - 5 }} lainnya</p></div><button @click="importCSV" class="btn-import-csv">✅ Import {{ csvPreview.length }} Tamu</button></div>
           </div>
           
-          <div class="guest-filter" v-if="guestList.length > 0">
-            <input v-model="searchGuest" placeholder="🔍 Cari..." /><select v-model="filterCategory"><option value="">Semua</option><option>Keluarga</option><option>Teman</option><option>Kolega</option><option>VIP</option></select>
-          </div>
-          <div v-if="guestList.length > 0" class="guest-list-full">
-            <div v-for="guest in filteredGuestList" :key="guest.id" class="guest-item-full">
-              <div><span class="guest-name">{{ guest.name }}</span><span class="guest-category" :class="guest.category">{{ guest.category }}</span></div>
-              <div class="guest-link-box">
-                <code>{{ baseUrl }}/wedding/{{ savedSlug }}?to={{ guest.slug }}</code>
-                <button @click="copyGuestLink(guest.slug)" class="btn-icon-sm">📋</button>
-                <button @click="shareWA(guest)" class="btn-icon-sm btn-wa">💬</button>
-                <button @click="deleteGuest(guest.id)" class="btn-icon-sm btn-del">🗑️</button>
-              </div>
-            </div>
-          </div>
+          <div class="guest-filter" v-if="guestList.length > 0"><input v-model="searchGuest" placeholder="🔍 Cari..." /><select v-model="filterCategory"><option value="">Semua</option><option>Keluarga</option><option>Teman</option><option>Kolega</option><option>VIP</option></select></div>
+          <div v-if="guestList.length > 0" class="guest-list-full"><div v-for="guest in filteredGuestList" :key="guest.id" class="guest-item-full"><div><span class="guest-name">{{ guest.name }}</span><span class="guest-category" :class="guest.category">{{ guest.category }}</span></div><div class="guest-link-box"><code>{{ baseUrl }}/wedding/{{ savedSlug }}?to={{ guest.slug }}</code><button @click="copyGuestLink(guest.slug)" class="btn-icon-sm">📋</button><button @click="shareWA(guest)" class="btn-icon-sm btn-wa">💬</button><button @click="deleteGuest(guest.id)" class="btn-icon-sm btn-del">🗑️</button></div></div></div>
         </div>
 
-        <!-- KADO -->
         <div class="section" v-if="savedSlug">
           <h3>🎁 Kado ({{ giftList.length }}/{{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }})</h3>
-          <div class="gift-form-box" v-if="canAddMoreGifts">
-            <input v-model="newGift.name" placeholder="Nama Barang *" />
-            <input v-model="newGift.price" type="number" placeholder="Harga (Rp)" />
-            <input v-model="newGift.link" placeholder="Link Tokopedia/Shopee" />
-            <button @click="addGift" class="btn-add-guest">➕ Tambah Kado</button>
-          </div>
-          <div v-else class="limit-reached"><p>❌ Limit! ({{ giftList.length }}/{{ planLimits.maxGifts }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade</button></div>
-          <div v-if="giftList.length > 0" class="gift-list">
-            <div v-for="gift in giftList" :key="gift.id" class="gift-item">
-              <div><span class="gift-name">{{ gift.name }}</span><span class="gift-price">Rp {{ formatNumber(gift.price) }}</span></div>
-              <span :class="{ dibeli: gift.status }">{{ gift.status ? '✅ Dibeli' : '🟡 Tersedia' }}</span>
-              <button @click="deleteGift(gift.id)" class="btn-del">🗑️</button>
-            </div>
-          </div>
+          <div class="gift-form-box" v-if="canAddMoreGifts"><input v-model="newGift.name" placeholder="Nama Barang *" /><input v-model="newGift.price" type="number" placeholder="Harga (Rp)" /><input v-model="newGift.link" placeholder="Link" /><button @click="addGift" class="btn-add-guest">➕ Tambah</button></div>
+          <div v-else class="limit-reached"><p>❌ Limit kado! ({{ giftList.length }}/{{ planLimits.maxGifts }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade Premium</button></div>
+          <div v-if="giftList.length > 0" class="gift-list"><div v-for="gift in giftList" :key="gift.id" class="gift-item"><div><span class="gift-name">{{ gift.name }}</span><span class="gift-price">Rp {{ formatNumber(gift.price) }}</span></div><span :class="{ dibeli: gift.status }">{{ gift.status ? '✅' : '🟡' }}</span><button @click="deleteGift(gift.id)" class="btn-del">🗑️</button></div></div>
         </div>
       </form>
     </div>
 
-    <!-- PANEL KANAN: PREVIEW -->
     <div class="panel-kanan">
-      <!-- ELEGAN -->
-      <div v-if="form.template === 'elegan'" class="mockup-hp" :style="previewStyles">
-        <div class="hp-content">
-          <div v-if="previewMode === 'cover'" class="preview-cover">
-            <div class="cover-decoration">💐</div><p class="cover-subtitle">The Wedding Of</p>
-            <h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1>
-            <p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Akad' }}</p>
-            <div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div>
-            <button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button>
-          </div>
-          <div v-else class="preview-content">
-            <button class="mock-back-btn" @click="previewMode = 'cover'">←</button>
-            <div class="bismillah">﷽</div>
-            <h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1>
-            <div class="mock-countdown"><span>00 Hari</span><span>00 Jam</span><span>00 Mnt</span></div>
-            <div class="mock-event"><h4>💍 Akad</h4><p>{{ formatDate(form.akad_date) }}</p></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MINIMALIS -->
-      <div v-else-if="form.template === 'minimalis'" class="mockup-hp minimalis-preview">
-        <div class="hp-content">
-          <div v-if="previewMode === 'cover'" class="preview-cover-minimalis">
-            <div class="cover-icon">✨</div>
-            <h1>{{ form.nama_pria || '...' }}<br>&<br>{{ form.nama_wanita || '...' }}</h1>
-            <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
-            <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
-            <button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka Undangan</button>
-          </div>
-          <div v-else class="preview-content-minimalis">
-            <button class="mock-back-btn" @click="previewMode = 'cover'">← Kembali</button>
-            <div class="bismillah">﷽</div>
-            <h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1>
-            <div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span><span>00 Menit</span></div>
-            <div class="event-mini"><h4>💍 Akad Nikah</h4><p>{{ formatDate(form.akad_date) }}</p></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FLORAL -->
-      <div v-else-if="form.template === 'floral'" class="mockup-hp floral-preview">
-        <div class="hp-content">
-          <div v-if="previewMode === 'cover'" class="preview-cover-floral">
-            <div class="floral-border">
-              <div class="cover-icon">🌸</div>
-              <h1>{{ form.nama_pria || '...' }}<br>&<br>{{ form.nama_wanita || '...' }}</h1>
-              <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
-              <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
-              <button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka Undangan</button>
-            </div>
-          </div>
-          <div v-else class="preview-content-floral">
-            <button class="mock-back-btn" @click="previewMode = 'cover'">← Kembali</button>
-            <div class="bismillah">﷽</div>
-            <h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1>
-            <div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span><span>00 Menit</span></div>
-            <div class="event-mini"><h4>💍 Akad Nikah</h4><p>{{ formatDate(form.akad_date) }}</p></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="preview-controls">
-        <p class="preview-label">📱 Preview {{ form.template }}</p>
-        <div class="mode-switch">
-          <button @click="previewMode = 'cover'" :class="{ active: previewMode === 'cover' }">Cover</button>
-          <button @click="previewMode = 'content'" :class="{ active: previewMode === 'content' }">Isi</button>
-        </div>
-      </div>
+      <div v-if="form.template === 'elegan'" class="mockup-hp" :style="previewStyles"><div class="hp-content"><div v-if="previewMode === 'cover'" class="preview-cover"><div class="cover-decoration">💐</div><p class="cover-subtitle">The Wedding Of</p><h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1><p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Akad' }}</p><div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div><button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button></div><div v-else class="preview-content"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1><div class="mock-countdown"><span>00 Hari</span><span>00 Jam</span><span>00 Mnt</span></div><div class="mock-event"><h4>💍 Akad</h4><p>{{ formatDate(form.akad_date) }}</p></div></div></div></div>
+      <div v-else-if="form.template === 'minimalis'" class="mockup-hp minimalis-preview"><div class="hp-content"><div v-if="previewMode === 'cover'" class="preview-cover-minimalis"><div class="cover-icon">✨</div><h1>{{ form.nama_pria || '...' }}<br>&<br>{{ form.nama_wanita || '...' }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka</button></div><div v-else class="preview-content-minimalis"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>💍 Akad</h4><p>{{ formatDate(form.akad_date) }}</p></div></div></div></div>
+      <div v-else-if="form.template === 'floral'" class="mockup-hp floral-preview"><div class="hp-content"><div v-if="previewMode === 'cover'" class="preview-cover-floral"><div class="floral-border"><div class="cover-icon">🌸</div><h1>{{ form.nama_pria || '...' }}<br>&<br>{{ form.nama_wanita || '...' }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka</button></div></div><div v-else class="preview-content-floral"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ form.nama_pria || '...' }} & {{ form.nama_wanita || '...' }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>💍 Akad</h4><p>{{ formatDate(form.akad_date) }}</p></div></div></div></div>
+      <div class="preview-controls"><p class="preview-label">📱 Preview {{ form.template }}</p><div class="mode-switch"><button @click="previewMode = 'cover'" :class="{ active: previewMode === 'cover' }">Cover</button><button @click="previewMode = 'content'" :class="{ active: previewMode === 'content' }">Isi</button></div></div>
     </div>
   </div>
 </template>
@@ -308,6 +104,9 @@ const router = useRouter()
 const user = ref(null)
 const planLimits = ref(getPlanLimits())
 
+// WhatsApp number (GANTI DENGAN NOMOR LO)
+const waNumber = '6281234567890'
+
 const form = reactive({
   nama_pria: '', nama_wanita: '', akad_date: '', akad_time: '', akad_location: '',
   resepsi_date: '', resepsi_time: '', resepsi_location: '', orangtua_pria: '', orangtua_wanita: '', rekening: '',
@@ -316,53 +115,27 @@ const form = reactive({
   gallery: []
 })
 
-const saving = ref(false)
-const uploadingBg = ref(false)
-const uploadingGallery = ref(false)
-const uploadProgress = ref('0/0')
-const uploadingMusic = ref(false)
-const savedSlug = ref('')
-const baseUrl = window.location.origin
-const previewMode = ref('cover')
-const selectedPreviewGuestId = ref('')
+const saving = ref(false); const uploadingBg = ref(false); const uploadingGallery = ref(false)
+const uploadProgress = ref('0/0'); const uploadingMusic = ref(false)
+const savedSlug = ref(''); const baseUrl = window.location.origin
+const previewMode = ref('cover'); const selectedPreviewGuestId = ref('')
 
-const loadingText = computed(() => {
-  if (saving.value) return 'Menyimpan...'
-  if (uploadingBg.value) return 'Upload Background...'
-  if (uploadingGallery.value) return `Upload Galeri ${uploadProgress.value}...`
-  if (uploadingMusic.value) return 'Upload Musik...'
-  return 'Memproses...'
-})
+const loadingText = computed(() => saving.value ? 'Menyimpan...' : uploadingBg.value ? 'Upload BG...' : 'Memproses...')
 
 const newGuest = reactive({ name: '', nickname: '', category: 'Keluarga', seats: 1 })
-const guestList = ref([])
-const currentWeddingId = ref(null)
-const loadingGuests = ref(false)
-const searchGuest = ref('')
-const filterCategory = ref('')
-const csvPreview = ref([])
-const csvInput = ref(null)
+const guestList = ref([]); const currentWeddingId = ref(null)
+const loadingGuests = ref(false); const searchGuest = ref(''); const filterCategory = ref('')
+const csvPreview = ref([]); const csvInput = ref(null)
 
 const newGift = reactive({ name: '', price: null, link: '', image: '' })
-const giftList = ref([])
-const loadingGifts = ref(false)
+const giftList = ref([]); const loadingGifts = ref(false)
 let giftRefreshInterval = null
 
 const canAddMoreGuests = computed(() => planLimits.value.maxGuests === Infinity || guestList.value.length < planLimits.value.maxGuests)
 const canAddMoreGifts = computed(() => planLimits.value.maxGifts === Infinity || giftList.value.length < planLimits.value.maxGifts)
 
-const previewStyles = computed(() => ({
-  backgroundColor: form.theme.background_type === 'solid' ? form.theme.background_value : 'transparent',
-  backgroundImage: form.theme.background_type === 'image' ? `url(${form.theme.background_value})` : 'none',
-  backgroundSize: 'cover', backgroundPosition: 'center', color: form.theme.primary_color, fontFamily: form.theme.font_family
-}))
-
-const filteredGuestList = computed(() => {
-  let f = guestList.value
-  if (searchGuest.value) { const s = searchGuest.value.toLowerCase(); f = f.filter(g => g.name.toLowerCase().includes(s) || (g.nickname && g.nickname.toLowerCase().includes(s))) }
-  if (filterCategory.value) f = f.filter(g => g.category === filterCategory.value)
-  return f
-})
+const previewStyles = computed(() => ({ backgroundColor: form.theme.background_type === 'solid' ? form.theme.background_value : 'transparent', backgroundImage: form.theme.background_type === 'image' ? `url(${form.theme.background_value})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', color: form.theme.primary_color, fontFamily: form.theme.font_family }))
+const filteredGuestList = computed(() => { let f = guestList.value; if (searchGuest.value) { const s = searchGuest.value.toLowerCase(); f = f.filter(g => g.name.toLowerCase().includes(s) || (g.nickname && g.nickname.toLowerCase().includes(s))) } if (filterCategory.value) f = f.filter(g => g.category === filterCategory.value); return f })
 const previewGuestName = computed(() => selectedPreviewGuestId.value ? (guestList.value.find(x => x.id === selectedPreviewGuestId.value)?.nickname || guestList.value.find(x => x.id === selectedPreviewGuestId.value)?.name || '...') : 'Bapak/Ibu/Saudara/i')
 const purchasedGiftsCount = computed(() => giftList.value.filter(g => g.status).length)
 const availableGiftsCount = computed(() => giftList.value.filter(g => !g.status).length)
@@ -370,85 +143,32 @@ const recentlyPurchasedGifts = computed(() => giftList.value.filter(g => g.statu
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
 const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
-const upgradePlan = () => alert('🔜 Hubungi admin untuk upgrade!')
+
+const upgradePlan = () => {
+  const email = user.value?.email || ''
+  const message = `Halo kak, saya mau upgrade ke PREMIUM (Rp 99.000).%0A%0A📧 Email: ${email}%0A📋 Paket: Premium%0A💰 Harga: Rp 99.000%0A%0AMohon info cara pembayarannya ya. Terima kasih! 🙏`
+  window.open(`https://wa.me/${waNumber}?text=${message}`, '_blank')
+}
+
 const handleBgChange = () => { form.theme.background_value = form.theme.background_type === 'solid' ? '#ffffff' : '' }
 const removeImage = (i) => form.gallery.splice(i, 1)
 
-// ========== UPLOAD FUNCTIONS (WITH COMPRESSION) ==========
-const uploadBackground = async (e) => {
-  const f = e.target.files[0]
-  if (!f) return
-  if (f.size > 10 * 1024 * 1024) { showError(null, 'Ukuran file maksimal 10MB'); e.target.value = ''; return }
-  uploadingBg.value = true
-  try {
-    const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true }
-    const compressed = await imageCompression(f, options)
-    const fileName = `bg-${Date.now()}.${f.name.split('.').pop()}`
-    const { data, error } = await supabase.storage.from('weddings').upload(fileName, compressed, { cacheControl: '3600' })
-    if (error) throw error
-    form.theme.background_value = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl
-    showSuccess('Background berhasil diupload!')
-  } catch (err) { showError(err, 'Gagal upload') }
-  finally { uploadingBg.value = false; e.target.value = '' }
-}
+const uploadBackground = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) { showError(null, 'Max 10MB'); return }; uploadingBg.value = true; try { const c = await imageCompression(f, { maxSizeMB: 0.5, maxWidthOrHeight: 1200 }); const { data } = await supabase.storage.from('weddings').upload(`bg-${Date.now()}.${f.name.split('.').pop()}`, c); form.theme.background_value = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Uploaded!') } catch { showError(null, 'Gagal') } finally { uploadingBg.value = false; e.target.value = '' } }
+const uploadGallery = async (e) => { const files = Array.from(e.target.files); if (!files.length) return; uploadingGallery.value = true; let up = 0; try { for (const f of files) { uploadProgress.value = `${up}/${files.length}`; if (!f.type.startsWith('image/')) continue; if (f.size > 10*1024*1024) continue; const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 800 }); const { data } = await supabase.storage.from('weddings').upload(`gal-${Date.now()}-${Math.random().toString(36).slice(2)}.${f.name.split('.').pop()}`, c); form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl); up++ } if (up > 0) showSuccess(`${up} foto!`) } catch { showError(null, 'Gagal') } finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' } }
+const uploadMusic = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 20*1024*1024) { showError(null, 'Max 20MB'); return }; uploadingMusic.value = true; try { const { data } = await supabase.storage.from('weddings').upload(`mus-${Date.now()}.${f.name.split('.').pop()}`, f, { contentType: 'audio/mpeg' }); form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Musik!') } catch { showError(null, 'Gagal') } finally { uploadingMusic.value = false; e.target.value = '' } }
 
-const uploadGallery = async (e) => {
-  const files = Array.from(e.target.files)
-  if (!files.length) return
-  uploadingGallery.value = true
-  let uploaded = 0
-  try {
-    for (const f of files) {
-      uploadProgress.value = `${uploaded}/${files.length}`
-      if (!f.type.startsWith('image/')) continue
-      if (f.size > 10 * 1024 * 1024) { showError(null, `File ${f.name} terlalu besar`); continue }
-      const options = { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true }
-      const compressed = await imageCompression(f, options)
-      const fileName = `gallery-${Date.now()}-${Math.random().toString(36).substring(7)}.${f.name.split('.').pop()}`
-      const { data, error } = await supabase.storage.from('weddings').upload(fileName, compressed, { cacheControl: '3600' })
-      if (error) throw error
-      form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl)
-      uploaded++
-    }
-    if (uploaded > 0) showSuccess(`${uploaded} gambar berhasil diupload!`)
-  } catch (err) { showError(err, 'Gagal upload galeri') }
-  finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' }
-}
-
-const uploadMusic = async (e) => {
-  const f = e.target.files[0]
-  if (!f) return
-  if (f.size > 20 * 1024 * 1024) { showError(null, 'Ukuran file maksimal 20MB'); e.target.value = ''; return }
-  uploadingMusic.value = true
-  try {
-    const fileExt = f.name.split('.').pop() || 'mp3'
-    const fileName = `music-${Date.now()}.${fileExt}`
-    const { data, error } = await supabase.storage.from('weddings').upload(fileName, f, { cacheControl: '3600', contentType: 'audio/mpeg' })
-    if (error) throw error
-    form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl
-    showSuccess('Musik berhasil diupload!')
-  } catch (err) { showError(err, 'Gagal upload musik') }
-  finally { uploadingMusic.value = false; e.target.value = '' }
-}
-
-// ========== SAVE / UPDATE ==========
 const saveWedding = async () => {
   if (!form.nama_pria || !form.nama_wanita || !form.akad_date || !form.akad_time || !form.akad_location) { showError(null, 'Isi data wajib!'); return }
   saving.value = true
   try {
     if (currentWeddingId.value) {
-      const { error } = await supabase.from('weddings').update({
-        nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
-        resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
-        orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
-        template: form.template, theme_settings: { ...form.theme, gallery: form.gallery }
-      }).eq('id', currentWeddingId.value)
+      const { error } = await supabase.from('weddings').update({ nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location, resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null, orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening, template: form.template, theme_settings: { ...form.theme, gallery: form.gallery } }).eq('id', currentWeddingId.value)
       if (error) throw error; showSuccess('Diupdate!')
     } else {
       const { allowed, message } = await canCreateWedding(supabase)
       if (!allowed) { alert(message); return }
       const slug = `${form.nama_pria.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${form.nama_wanita.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`
-      const { data } = await supabase.from('weddings').insert([{ nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location, resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null, orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening, template: form.template, slug, theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true, expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), user_id: user.value?.id || null }]).select()
+      const { data } = await supabase.from('weddings').insert([{ nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location, resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null, orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening, template: form.template, slug, theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true, expired_at: new Date(Date.now() + 30*24*60*60*1000), user_id: user.value?.id || null }]).select()
       savedSlug.value = slug; currentWeddingId.value = data[0].id
       localStorage.setItem('currentWeddingId', data[0].id); localStorage.setItem('currentSlug', slug)
       showSuccess('Tersimpan!')
@@ -461,26 +181,22 @@ const resetForm = () => { if (confirm('Reset?')) { Object.assign(form, { nama_pr
 const copyMainLink = () => { navigator.clipboard.writeText(`${baseUrl}/wedding/${savedSlug.value}`); showSuccess('Link dicopy!') }
 const previewWedding = () => window.open(`${baseUrl}/wedding/${savedSlug.value}`, '_blank')
 
-// ========== TAMU ==========
 const loadGuestList = async () => { if (!currentWeddingId.value) return; loadingGuests.value = true; try { const { data } = await supabase.from('guests').select('*').eq('wedding_id', currentWeddingId.value); guestList.value = (data || []).map(g => ({ id: g.id, name: g.nama_tamu, nickname: g.nickname || '', category: g.category || 'Keluarga', seats: g.seats || 1, slug: g.unique_slug, status_buka: g.status_buka })) } catch { } finally { loadingGuests.value = false } }
 const addGuest = async () => { if (!canAddMoreGuests.value) { alert(`❌ Limit tamu! (${guestList.value.length}/${planLimits.value.maxGuests})`); return } if (!newGuest.name.trim()) { showError(null, 'Nama wajib'); return }; try { const slug = `${newGuest.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now().toString().slice(-6)}`; const { data, error } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: newGuest.name, nickname: newGuest.nickname || null, category: newGuest.category, seats: newGuest.seats, unique_slug: slug, status_buka: false }]).select(); if (error) { showError(error, 'Gagal'); return }; if (!data) return; guestList.value.push({ id: data[0].id, name: newGuest.name, nickname: newGuest.nickname, category: newGuest.category, seats: newGuest.seats, slug, status_buka: false }); Object.assign(newGuest, { name: '', nickname: '', category: 'Keluarga', seats: 1 }); showSuccess('Tamu ditambah!') } catch (err) { showError(err, 'Gagal') } }
 const copyGuestLink = (slug) => { navigator.clipboard.writeText(`${baseUrl}/wedding/${savedSlug.value}?to=${slug}`); showSuccess('Link dicopy!') }
 const shareWA = (guest) => { window.open(`https://wa.me/?text=${encodeURIComponent(`Yth. ${guest.nickname || guest.name}, Anda diundang ke ${form.nama_pria} & ${form.nama_wanita}: ${baseUrl}/wedding/${savedSlug.value}?to=${guest.slug}`)}`, '_blank') }
 const deleteGuest = async (id) => { if (confirm('Hapus?')) { await supabase.from('guests').delete().eq('id', id); guestList.value = guestList.value.filter(g => g.id !== id); showSuccess('Dihapus') } }
 
-// ========== CSV ==========
 const handleCSVUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { const lines = ev.target.result.split('\n').filter(line => line.trim()); csvPreview.value = lines.map(line => { const parts = line.split(',').map(p => p.trim()); return { name: parts[0], nickname: parts[1] || '', category: parts[2] || 'Keluarga', seats: parseInt(parts[3]) || 1 } }).filter(item => item.name) }; reader.readAsText(file, 'UTF-8'); e.target.value = '' }
 const clearCSVPreview = () => { csvPreview.value = [] }
 const importCSV = async () => { if (!csvPreview.value.length) return; const totalAfter = guestList.value.length + csvPreview.value.length; if (planLimits.value.maxGuests !== Infinity && totalAfter > planLimits.value.maxGuests) { alert(`❌ Gak bisa import ${csvPreview.value.length} tamu!\nTotal: ${totalAfter}/${planLimits.value.maxGuests}`); return }; let success = 0; for (const item of csvPreview.value) { try { const slug = `${item.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now()}-${Math.random().toString(36).substring(4)}`; const { data } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: item.name, nickname: item.nickname || null, category: item.category, seats: item.seats, unique_slug: slug, status_buka: false }]).select(); guestList.value.push({ id: data[0].id, name: item.name, nickname: item.nickname, category: item.category, seats: item.seats, slug, status_buka: false }); success++ } catch { } }; showSuccess(`Import: ${success} berhasil`); csvPreview.value = [] }
 
-// ========== KADO ==========
 const loadGiftList = async () => { if (!currentWeddingId.value) return; loadingGifts.value = true; try { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', currentWeddingId.value); giftList.value = (data || []).map(g => ({ id: g.id, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, status: g.status, buyer_name: g.dibeli_oleh?.nama_tamu || null, resi: g.nomor_resi })) } catch { } finally { loadingGifts.value = false } }
 const addGift = async () => { if (!canAddMoreGifts.value) { alert(`❌ Limit kado! (${giftList.value.length}/${planLimits.value.maxGifts})`); return } if (!newGift.name) { showError(null, 'Nama wajib'); return }; try { const { data } = await supabase.from('gifts').insert([{ wedding_id: currentWeddingId.value, nama_barang: newGift.name, harga_estimasi: newGift.price, link_produk: newGift.link, gambar_url: newGift.image, status: false }]).select(); giftList.value.push({ id: data[0].id, name: newGift.name, price: newGift.price, link: newGift.link, image: newGift.image, status: false, buyer_name: null, resi: null }); Object.assign(newGift, { name: '', price: null, link: '', image: '' }); showSuccess('Kado ditambah!') } catch (err) { showError(err, 'Gagal') } }
 const deleteGift = async (id) => { if (confirm('Hapus?')) { await supabase.from('gifts').delete().eq('id', id); giftList.value = giftList.value.filter(g => g.id !== id); showSuccess('Dihapus') } }
 
 const handleLogout = () => { localStorage.removeItem('session'); localStorage.removeItem('currentWeddingId'); localStorage.removeItem('currentSlug'); router.push('/login') }
 
-// ========== AUTO-LOAD ==========
 onMounted(async () => {
   const session = JSON.parse(localStorage.getItem('session') || 'null')
   if (!session?.user) { router.push('/login'); return }
@@ -500,7 +216,6 @@ onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) 
 .header p { color: #666; margin-top: 5px; }
 .header-actions { display: flex; gap: 10px; }
 .btn-back-list { background: transparent; color: #9b87f5; border: 1px solid #9b87f5; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 10px; }
-.btn-back-list:hover { background: #f5f0ff; }
 .btn-settings { background: #f0f0f0; color: #555; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .btn-logout { background: #fee2e2; color: #ef4444; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .plan-info { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -535,14 +250,13 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .color-row input[type="color"] { width: 50px; height: 35px; padding: 0; }
 .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
 .btn-primary { flex: 2; padding: 14px; background: #9b87f5; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary:disabled { opacity: 0.6; }
 .btn-secondary { flex: 1; padding: 14px; background: white; color: #666; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
 .result-link { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 12px; }
 .link-box { display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; }
 .link-box code { flex: 1; font-size: 12px; word-break: break-all; }
 .preview-btn { width: 100%; margin-top: 10px; padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-/* GIFT MONITOR */
 .gift-summary-box { margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; }
 .gift-summary-header { display: flex; justify-content: space-between; align-items: center; }
 .btn-refresh { background: white; border: 1px solid #fcd34d; padding: 8px 16px; border-radius: 50px; cursor: pointer; font-weight: 600; }
@@ -557,7 +271,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .guest-form-box, .gift-form-box { display: flex; flex-direction: column; gap: 10px; }
 .btn-add-guest { padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
 
-/* CSV */
 .csv-section { background: white; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #e0e0e0; }
 .csv-hint { font-size: 12px; color: #666; }
 .csv-upload-area { text-align: center; }
@@ -587,7 +300,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .guest-filter select { flex: 1; }
 .dibeli { color: #4caf50; font-weight: 700; }
 
-/* PANEL KANAN */
 .panel-kanan { width: 55%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
 .mockup-hp { width: 360px; height: 680px; background: white; border-radius: 45px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 10px solid #1a1a1a; overflow-y: auto; }
 .hp-content { text-align: center; }
@@ -608,7 +320,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .mock-event h4, .event-mini h4 { margin-bottom: 5px; font-size: 14px; }
 .bismillah { font-size: 32px; opacity: 0.6; margin-bottom: 10px; }
 
-/* MINIMALIS PREVIEW */
 .minimalis-preview { background: #fafafa !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-minimalis { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 560px; text-align: center; padding: 20px; }
 .preview-cover-minimalis .cover-icon { font-size: 50px; margin-bottom: 15px; }
@@ -620,7 +331,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .preview-content-minimalis { text-align: center; padding: 20px 10px; }
 .preview-content-minimalis h1 { font-size: 24px; font-weight: 300; color: #2c3e50; margin: 15px 0; }
 
-/* FLORAL PREVIEW */
 .floral-preview { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,240,245,0.95)) !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-floral { display: flex; justify-content: center; align-items: center; min-height: 560px; padding: 15px; }
 .floral-border { border: 3px solid #fbcfe8; border-radius: 25px; padding: 30px 20px; text-align: center; background: white; width: 100%; box-shadow: 0 10px 30px rgba(244,114,182,0.1); }
@@ -638,5 +348,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .mode-switch { display: flex; gap: 8px; justify-content: center; }
 .mode-switch button { padding: 8px 20px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 50px; cursor: pointer; font-size: 13px; }
 .mode-switch button.active { background: white; color: #667eea; }
+
 @media (max-width: 768px) { .dashboard { flex-direction: column; } .panel-kiri, .panel-kanan { width: 100%; padding: 15px; } .mockup-hp { width: 300px; height: 580px; } }
 </style>
