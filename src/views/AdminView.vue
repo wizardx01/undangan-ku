@@ -7,6 +7,7 @@
         <p>Kelola semua undangan dan user</p>
       </div>
       <div class="header-actions">
+        <button @click="goToDashboardList" class="btn-dashboard">📋 Daftar Undangan</button>
         <button @click="router.push('/profile')" class="btn-settings">⚙️ Pengaturan</button>
         <button @click="handleLogout" class="btn-logout">🚪 Logout</button>
       </div>
@@ -14,8 +15,43 @@
 
     <!-- TAB SWITCH -->
     <div class="tab-switch">
+      <button @click="activeTab = 'create'" :class="{ active: activeTab === 'create' }">✨ Buat Baru</button>
       <button @click="activeTab = 'events'" :class="{ active: activeTab === 'events' }">📋 Undangan</button>
       <button @click="activeTab = 'users'" :class="{ active: activeTab === 'users' }">👥 Users</button>
+    </div>
+
+    <!-- ==================== TAB BUAT BARU ==================== -->
+    <div v-if="activeTab === 'create'">
+      <div class="create-section">
+        <h2>🎉 Buat Undangan Baru</h2>
+        <p>Pilih jenis acara di bawah ini:</p>
+        
+        <div class="event-type-grid">
+          <div class="event-card" @click="createNewWedding('wedding')">
+            <div class="event-icon">💍</div>
+            <h3>Wedding</h3>
+            <p>Pernikahan</p>
+          </div>
+          
+          <div class="event-card" @click="createNewWedding('sunatan')">
+            <div class="event-icon">✂️</div>
+            <h3>Sunatan</h3>
+            <p>Khitanan</p>
+          </div>
+          
+          <div class="event-card" @click="createNewWedding('aqiqah')">
+            <div class="event-icon">👶</div>
+            <h3>Aqiqah</h3>
+            <p>Syukuran Kelahiran</p>
+          </div>
+          
+          <div class="event-card" @click="createNewWedding('syukuran')">
+            <div class="event-icon">🏠</div>
+            <h3>Syukuran</h3>
+            <p>Rumah Baru, Wisuda, dll</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== TAB UNDANGAN ==================== -->
@@ -45,6 +81,7 @@
       </div>
 
       <!-- TABEL UNDANGAN -->
+      {{ getEventLabel('wedding') }}
       <div class="table-card">
         <div class="table-header">
           <h3>📋 Semua Undangan</h3>
@@ -64,7 +101,7 @@
             </thead>
             <tbody>
               <tr v-for="event in events" :key="event.id">
-                <td><strong>{{ event.nama_pria }} & {{ event.nama_wanita || '' }}</strong></td>
+                <td><strong>{{ event.nama_pria }} {{ event.nama_wanita ? '& ' + event.nama_wanita : '' }}</strong></td>
                 <td><span class="event-badge" :class="event.event_type || 'wedding'">{{ getEventLabel(event.event_type) }}</span></td>
                 <td>{{ formatDate(event.akad_date) }}</td>
                 <td>{{ event.guest_count || 0 }}</td>
@@ -141,7 +178,7 @@ import { showError, showSuccess } from '../utils/errorHandler'
 
 const router = useRouter()
 const user = ref(null)
-const activeTab = ref('events')
+const activeTab = ref('create')
 
 const events = ref([])
 const users = ref([])
@@ -155,7 +192,6 @@ const getEventLabel = (t) => ({ wedding: '💍 Wedding', aqiqah: '👶 Aqiqah', 
 
 const loadAllData = async () => {
   try {
-    // Load events
     const { data: eventsData } = await supabase.from('weddings').select('*').order('created_at', { ascending: false })
     
     let tg = 0, tgi = 0
@@ -174,7 +210,6 @@ const loadAllData = async () => {
     totalGifts.value = tgi
     activeEvents.value = eventsData.filter(e => e.is_active).length
 
-    // Load users
     const { data: usersData } = await supabase.from('users').select('*').order('created_at', { ascending: false })
     for (const u of usersData) {
       const { count } = await supabase.from('weddings').select('*', { count: 'exact', head: true }).eq('user_id', u.id)
@@ -185,6 +220,17 @@ const loadAllData = async () => {
   } catch (err) {
     showError(err, 'Gagal memuat data')
   }
+}
+
+const createNewWedding = (eventType) => {
+  localStorage.removeItem('currentWeddingId')
+  localStorage.removeItem('currentSlug')
+  sessionStorage.setItem('selectedEventType', eventType)
+  router.push('/dashboard/edit')
+}
+
+const goToDashboardList = () => {
+  router.push('/dashboard')
 }
 
 const viewEvent = (slug) => {
@@ -204,22 +250,17 @@ const toggleEventStatus = async (event) => {
 }
 
 const deleteEvent = async (event) => {
-  if (!confirm(`Hapus undangan "${event.nama_pria} & ${event.nama_wanita}"?\nSemua data tamu, pesan, dan kado akan ikut terhapus.`)) return
+  if (!confirm(`Hapus undangan "${event.nama_pria} ${event.nama_wanita ? '& ' + event.nama_wanita : ''}"?\nSemua data tamu, pesan, dan kado akan ikut terhapus.`)) return
   
   try {
-    // Hapus data terkait
     await supabase.from('gifts').delete().eq('wedding_id', event.id)
     await supabase.from('messages').delete().eq('wedding_id', event.id)
     await supabase.from('guests').delete().eq('wedding_id', event.id)
     
-    // Hapus undangan
     const { error } = await supabase.from('weddings').delete().eq('id', event.id)
     if (error) throw error
     
-    // HAPUS DARI ARRAY LOKAL (INI YANG BIKIN LANGSUNG HILANG)
     events.value = events.value.filter(e => e.id !== event.id)
-    
-    // Update stats
     totalEvents.value = events.value.length
     activeEvents.value = events.value.filter(e => e.is_active).length
     
@@ -257,7 +298,6 @@ const deleteUser = async (u) => {
   if (!confirm(`Hapus user "${u.email}"?\nSemua undangannya akan ikut terhapus.`)) return
   
   try {
-    // Hapus semua undangan user
     const { data: userEvents } = await supabase.from('weddings').select('id').eq('user_id', u.id)
     for (const e of userEvents) {
       await supabase.from('gifts').delete().eq('wedding_id', e.id)
@@ -266,11 +306,9 @@ const deleteUser = async (u) => {
     }
     await supabase.from('weddings').delete().eq('user_id', u.id)
     
-    // Hapus user
     const { error } = await supabase.from('users').delete().eq('id', u.id)
     if (error) throw error
     
-    // Hapus dari array lokal
     users.value = users.value.filter(us => us.id !== u.id)
     showSuccess('User berhasil dihapus!')
   } catch (err) {
@@ -300,12 +338,24 @@ onMounted(() => {
 .admin-header h1 { font-size: 28px; color: #2c3e50; }
 .admin-header p { color: #666; margin: 0; }
 .header-actions { display: flex; gap: 10px; }
+.btn-dashboard { background: #9b87f5; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .btn-settings { background: #f0f0f0; color: #555; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .btn-logout { background: #fee2e2; color: #ef4444; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 
 .tab-switch { display: flex; gap: 10px; margin-bottom: 30px; background: white; padding: 5px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
 .tab-switch button { flex: 1; padding: 14px; border: none; background: transparent; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
 .tab-switch button.active { background: #9b87f5; color: white; }
+
+/* CREATE SECTION */
+.create-section { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); text-align: center; }
+.create-section h2 { font-size: 24px; color: #2c3e50; margin-bottom: 8px; }
+.create-section > p { color: #666; margin-bottom: 25px; }
+.event-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+.event-card { background: #f9fafb; border: 2px solid transparent; border-radius: 16px; padding: 25px 15px; cursor: pointer; transition: all 0.3s; text-align: center; }
+.event-card:hover { border-color: #9b87f5; background: #f5f0ff; transform: translateY(-5px); box-shadow: 0 10px 25px rgba(155,135,245,0.15); }
+.event-icon { font-size: 48px; margin-bottom: 12px; }
+.event-card h3 { font-size: 16px; color: #2c3e50; margin-bottom: 4px; }
+.event-card p { font-size: 13px; color: #888; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
 .stat-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); text-align: center; }
@@ -344,5 +394,6 @@ th { background: #f9fafb; font-weight: 600; color: #555; }
 @media (max-width: 768px) {
   .admin-dashboard { padding: 20px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .event-type-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
