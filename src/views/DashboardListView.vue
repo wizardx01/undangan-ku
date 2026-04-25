@@ -3,16 +3,17 @@
     <!-- HEADER -->
     <div class="header">
       <div>
-        <h1>📋 Undangan Saya</h1>
-        <p>Kelola semua undangan Anda</p>
+        <h1>📋 {{ user?.role === 'admin' ? 'Semua Undangan (Admin)' : 'Undangan Saya' }}</h1>
+        <p>{{ user?.role === 'admin' ? 'Kelola semua undangan di sistem' : 'Kelola semua undangan Anda' }}</p>
       </div>
       <div class="header-actions">
         <button @click="router.push('/profile')" class="btn-settings" v-if="user">⚙️ Pengaturan</button>
+        <button @click="router.push('/admin')" class="btn-admin" v-if="user?.role === 'admin'">👑 Admin Panel</button>
         <button @click="handleLogout" class="btn-logout" v-if="user">🚪 Logout</button>
       </div>
     </div>
 
-    <!-- PLAN INFO -->
+    <!-- PLAN INFO (Hanya non-admin) -->
     <div class="plan-info" v-if="user && user?.role !== 'admin'">
       <div class="plan-badge" :class="user?.plan || 'basic'">{{ planLimits.name }}</div>
       <div class="plan-limits">
@@ -54,13 +55,13 @@
         </div>
       </div>
       
-      <span v-if="!canCreate" class="limit-text">
+      <span v-if="!canCreate && user?.role !== 'admin'" class="limit-text">
         ❌ Limit tercapai ({{ weddings.length }}/{{ planLimits.maxWeddings }})
         <button @click="upgradePlan" class="btn-upgrade-inline">⬆️ Upgrade</button>
       </span>
     </div>
 
-    <!-- LIST UNDANGAN YANG SUDAH ADA -->
+    <!-- LIST UNDANGAN -->
     <div class="existing-section" v-if="weddings.length > 0">
       <h2>📜 Undangan yang Sudah Dibuat</h2>
       
@@ -119,30 +120,18 @@ const user = ref(null)
 const planLimits = ref(getPlanLimits())
 const weddings = ref([])
 const loading = ref(true)
-
-// WhatsApp number (GANTI DENGAN NOMOR LO)
 const waNumber = '6281234567890'
 
+// Admin selalu bisa bikin undangan baru
 const canCreate = computed(() => {
+  if (user.value?.role === 'admin') return true
   return planLimits.value.maxWeddings === Infinity || weddings.value.length < planLimits.value.maxWeddings
 })
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-'
-
-const getEventIcon = (type) => {
-  const icons = { wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }
-  return icons[type] || '💍'
-}
-
-const getEventLabel = (type) => {
-  const labels = { wedding: '💍 Wedding', sunatan: '✂️ Sunatan', aqiqah: '👶 Aqiqah', syukuran: '🏠 Syukuran' }
-  return labels[type] || '💍 Wedding'
-}
-
-const getTemplateLabel = (t) => {
-  const labels = { elegan: '💐 Elegan', minimalis: '✨ Minimalis', floral: '🌸 Floral' }
-  return labels[t] || '💐 Elegan'
-}
+const getEventIcon = (t) => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[t] || '💍')
+const getEventLabel = (t) => ({ wedding: '💍 Wedding', sunatan: '✂️ Sunatan', aqiqah: '👶 Aqiqah', syukuran: '🏠 Syukuran' }[t] || '💍 Wedding')
+const getTemplateLabel = (t) => ({ elegan: '💐 Elegan', minimalis: '✨ Minimalis', floral: '🌸 Floral' }[t] || '💐 Elegan')
 
 const upgradePlan = () => {
   const email = user.value?.email || ''
@@ -153,12 +142,14 @@ const upgradePlan = () => {
 const loadWeddings = async () => {
   loading.value = true
   try {
-    const { data, error } = await supabase
-      .from('weddings')
-      .select('*')
-      .eq('user_id', user.value.id)
-      .order('created_at', { ascending: false })
+    let query = supabase.from('weddings').select('*').order('created_at', { ascending: false })
     
+    // Kalau bukan admin, cuma lihat undangan sendiri
+    if (user.value?.role !== 'admin') {
+      query = query.eq('user_id', user.value.id)
+    }
+    
+    const { data, error } = await query
     if (error) throw error
     
     for (const w of data) {
@@ -178,14 +169,9 @@ const loadWeddings = async () => {
 
 const createNewWedding = (eventType) => {
   if (!canCreate.value) return
-  
-  // Hapus data undangan sebelumnya dari localStorage
   localStorage.removeItem('currentWeddingId')
   localStorage.removeItem('currentSlug')
-  
-  // Simpan jenis event yang dipilih
   sessionStorage.setItem('selectedEventType', eventType)
-  
   router.push('/dashboard/edit')
 }
 
@@ -240,6 +226,7 @@ onMounted(() => {
 .header p { color: #666; margin-top: 5px; }
 .header-actions { display: flex; gap: 10px; }
 .btn-settings { background: #f0f0f0; color: #555; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-admin { background: #9b87f5; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .btn-logout { background: #fee2e2; color: #ef4444; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 
 .plan-info { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 15px 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -249,18 +236,14 @@ onMounted(() => {
 .plan-limits { display: flex; gap: 15px; font-size: 14px; font-weight: 500; }
 .btn-upgrade { margin-left: auto; padding: 8px 16px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
 
-/* SECTION: BUAT BARU */
 .create-section { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px; text-align: center; }
 .create-section h2 { font-size: 24px; color: #2c3e50; margin-bottom: 8px; }
 .create-section > p { color: #666; margin-bottom: 25px; }
 
 .event-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-
 .event-card { background: #f9fafb; border: 2px solid transparent; border-radius: 16px; padding: 25px 15px; cursor: pointer; transition: all 0.3s; text-align: center; }
 .event-card:hover { border-color: #9b87f5; background: #f5f0ff; transform: translateY(-5px); box-shadow: 0 10px 25px rgba(155,135,245,0.15); }
 .event-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-.event-card.disabled:hover { transform: none; box-shadow: none; }
-
 .event-icon { font-size: 48px; margin-bottom: 12px; }
 .event-card h3 { font-size: 16px; color: #2c3e50; margin-bottom: 4px; }
 .event-card p { font-size: 13px; color: #888; }
@@ -268,7 +251,6 @@ onMounted(() => {
 .limit-text { display: block; margin-top: 10px; color: #ef4444; font-weight: 600; }
 .btn-upgrade-inline { background: #9b87f5; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; margin-left: 8px; }
 
-/* SECTION: SUDAH ADA */
 .existing-section { margin-bottom: 30px; }
 .existing-section h2 { font-size: 22px; color: #2c3e50; margin-bottom: 20px; }
 
@@ -299,14 +281,6 @@ onMounted(() => {
 
 .btn-back { display: block; width: 100%; margin-top: 30px; padding: 14px; background: white; color: #666; border: 1px solid #ddd; border-radius: 12px; font-weight: 600; cursor: pointer; }
 
-@media (max-width: 768px) {
-  .event-type-grid { grid-template-columns: repeat(2, 1fr); }
-  .wedding-card { flex-direction: column; align-items: flex-start; }
-  .wedding-actions { width: 100%; }
-  .wedding-actions button { flex: 1; }
-}
-
-@media (max-width: 480px) {
-  .event-type-grid { grid-template-columns: 1fr 1fr; }
-}
+@media (max-width: 768px) { .event-type-grid { grid-template-columns: repeat(2, 1fr); } .wedding-card { flex-direction: column; align-items: flex-start; } .wedding-actions { width: 100%; } .wedding-actions button { flex: 1; } }
+@media (max-width: 480px) { .event-type-grid { grid-template-columns: 1fr 1fr; } }
 </style>
