@@ -1,40 +1,30 @@
 <template>
   <div class="template-floral">
-    <div class="floral-bg"></div>
-    <div class="floral-overlay"></div>
+    <div class="floral-bg"></div><div class="floral-overlay"></div>
     
-    <!-- COVER -->
     <div v-if="!isOpen" class="cover-floral">
       <div class="cover-card">
         <div class="floral-border">
-          <div class="cover-icon">🌸</div>
-          <h2 class="cover-subtitle">Pernikahan</h2>
-          <h1 class="cover-title">{{ props.wedding.nama_pria }}<br>&<br>{{ props.wedding.nama_wanita }}</h1>
+          <div class="cover-icon">{{ getCoverIcon() }}</div>
+          <h2 class="cover-subtitle">{{ getCoverTitle() }}</h2>
+          <h1 class="cover-title">{{ getTitle() }}</h1>
           <p class="cover-date">{{ formatDate(props.wedding.akad_date) }}</p>
           <p class="cover-guest">Kepada Yth.<br><strong>{{ displayGuestName }}</strong></p>
           <button class="btn-open" @click="openEnvelope">💐 Buka Undangan</button>
         </div>
-        <button class="music-toggle" @click="toggleMusic" :class="{ playing: isPlaying }">
-          {{ isPlaying ? '🔊' : '🔇' }}
-        </button>
+        <button class="music-toggle" @click="toggleMusic" :class="{ playing: isPlaying }">{{ isPlaying ? '🔊' : '🔇' }}</button>
       </div>
     </div>
     
-    <!-- ISI -->
     <div v-else class="content-floral">
       <div class="container">
-        <div class="top-actions">
-          <button class="icon-btn" @click="toggleMusic">{{ isPlaying ? '🔊' : '🔈' }}</button>
-        </div>
-        
+        <div class="top-actions"><button class="icon-btn" @click="toggleMusic">{{ isPlaying ? '🔊' : '🔈' }}</button></div>
         <div class="bismillah">﷽</div>
+        <h1 class="nama">{{ getTitle() }}</h1>
+        <p class="orangtua" v-if="props.wedding.event_type === 'wedding'">{{ props.wedding.orangtua_pria || '...' }} & {{ props.wedding.orangtua_wanita || '...' }}</p>
+        <p class="orangtua" v-else>{{ props.wedding.nama_wanita || '' }}</p>
         
-        <h1 class="nama">{{ props.wedding.nama_pria }} & {{ props.wedding.nama_wanita }}</h1>
-        <p class="orangtua">{{ props.wedding.orangtua_pria || '...' }} & {{ props.wedding.orangtua_wanita || '...' }}</p>
-        
-        <!-- COUNTDOWN -->
-        <div class="countdown-box">
-          <h3>⏳ Menuju Hari Bahagia</h3>
+        <div class="countdown-box"><h3>⏳ Menuju Hari Bahagia</h3>
           <div class="countdown-grid">
             <div class="countdown-item"><span>{{ countdown.days }}</span><label>Hari</label></div>
             <div class="countdown-item"><span>{{ countdown.hours }}</span><label>Jam</label></div>
@@ -42,111 +32,54 @@
           </div>
         </div>
 
-        <!-- NAMA TAMU -->
-        <div class="guest-section">
-          <p>Yang terhormat</p>
-          <p class="guest-name-display">{{ displayGuestName }}</p>
-        </div>
+        <div class="guest-section"><p>Yang terhormat</p><p class="guest-name-display">{{ displayGuestName }}</p></div>
         
-        <!-- AKAD -->
-        <div class="event-card">
-          <div class="event-icon">💍</div>
-          <h3>Akad Nikah</h3>
+        <div class="event-card"><div class="event-icon">{{ getEventIcon() }}</div><h3>{{ getEventLabel() }}</h3>
           <p>📆 {{ formatDate(props.wedding.akad_date) }}</p>
           <p>🕐 {{ formatTime(props.wedding.akad_time) }}</p>
           <p>📍 {{ props.wedding.akad_location }}</p>
           <button class="btn-map" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Maps</button>
         </div>
         
-        <!-- RESEPSI -->
-        <div class="event-card" v-if="props.wedding.resepsi_date">
-          <div class="event-icon">🎉</div>
-          <h3>Resepsi</h3>
+        <div class="event-card" v-if="props.wedding.event_type === 'wedding' && props.wedding.resepsi_date"><div class="event-icon">🎉</div><h3>Resepsi</h3>
           <p>📆 {{ formatDate(props.wedding.resepsi_date) }}</p>
           <p>🕐 {{ formatTime(props.wedding.resepsi_time) }}</p>
           <p>📍 {{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
         </div>
         
-        <!-- GALLERY -->
-        <div class="gallery-scroll" v-if="props.theme.gallery?.length">
-          <img v-for="(img, i) in props.theme.gallery" :key="i" :src="img" @click="openLightbox(i)" />
-        </div>
+        <div class="gallery-scroll" v-if="props.theme.gallery?.length"><img v-for="(img, i) in props.theme.gallery" :key="i" :src="img" @click="openLightbox(i)" /></div>
         
-        <!-- GIFT REGISTRY -->
-        <div class="gift-section" v-if="gifts.length > 0">
-          <h3>🎁 Kirim Kado</h3>
+        <div class="gift-section" v-if="gifts.length > 0"><h3>🎁 Kirim Kado</h3>
           <div class="gift-grid">
             <div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }">
               <img v-if="gift.image" :src="gift.image" class="gift-img" />
-              <div class="gift-content">
-                <h4>{{ gift.name }}</h4>
-                <p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
+              <div class="gift-content"><h4>{{ gift.name }}</h4><p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
                 <p v-if="gift.status" class="dibeli-badge">✅ Sudah Dibeli</p>
                 <a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a>
               </div>
-              <!-- FORM INPUT RESI -->
-              <div v-if="props.guestSlug && !gift.status" class="resi-form">
-                <p class="resi-title">📦 Sudah beli? Input resi di sini:</p>
-                <div class="resi-input-group">
-                  <input v-model="gift.resiInput" placeholder="Nomor Resi (contoh: JNE123)" />
-                  <button @click="claimGift(gift)" :disabled="gift.claiming" class="btn-klaim">
-                    {{ gift.claiming ? '...' : '🌸 Klaim' }}
-                  </button>
-                </div>
-              </div>
-              <div v-if="gift.buyer_name" class="buyer-info">
-                ✅ Dibeli oleh: <strong>{{ gift.buyer_name }}</strong>
-                <span v-if="gift.resi"> | 📦 {{ gift.resi }}</span>
-              </div>
+              <div v-if="props.guestSlug && !gift.status" class="resi-form"><input v-model="gift.resiInput" placeholder="Nomor Resi" /><button @click="claimGift(gift)" :disabled="gift.claiming">{{ gift.claiming ? '...' : '🌸 Klaim' }}</button></div>
+              <div v-if="gift.buyer_name" class="buyer-info">Dibeli oleh: {{ gift.buyer_name }}</div>
             </div>
           </div>
         </div>
         
-        <!-- AMPLOP -->
-        <div class="gift-box" v-if="props.wedding.rekening">
-          <h3>💝 Amplop Digital</h3>
-          <pre>{{ props.wedding.rekening }}</pre>
-          <button @click="copyRekening">📋 Salin Rekening</button>
-        </div>
+        <div class="gift-box" v-if="props.wedding.rekening"><h3>💝 Amplop Digital</h3><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening">📋 Salin Rekening</button></div>
         
-        <!-- RSVP -->
-        <div class="rsvp-box">
-          <h3>Konfirmasi Kehadiran</h3>
-          <div class="rsvp-options">
-            <button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }">✅ Hadir</button>
-            <button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }">❌ Tidak</button>
-          </div>
+        <div class="rsvp-box"><h3>Konfirmasi Kehadiran</h3>
+          <div class="rsvp-options"><button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }">✅ Hadir</button><button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }">❌ Tidak</button></div>
           <button @click="submitRsvp" :disabled="submitting" class="btn-submit">Kirim Konfirmasi</button>
         </div>
         
-        <!-- MESSAGES -->
-        <div class="messages-box">
-          <h3>💬 Ucapan & Doa</h3>
-          <div class="msg-list">
-            <div v-for="msg in messages" :key="msg.id" class="msg-item">
-              <strong>{{ msg.nama_pengirim }}</strong>
-              <p>{{ msg.pesan }}</p>
-              <small>{{ formatTime(msg.created_at) }}</small>
-            </div>
-          </div>
-          <div class="msg-form">
-            <input v-model="newMessage.nama" placeholder="Nama Anda" />
-            <textarea v-model="newMessage.pesan" placeholder="Tulis ucapan & doa..." rows="2"></textarea>
-            <button @click="sendMessage" :disabled="sendingMessage">💬 Kirim Doa</button>
-          </div>
+        <div class="messages-box"><h3>💬 Ucapan & Doa</h3>
+          <div class="msg-list"><div v-for="msg in messages" :key="msg.id" class="msg-item"><strong>{{ msg.nama_pengirim }}</strong><p>{{ msg.pesan }}</p><small>{{ formatTime(msg.created_at) }}</small></div></div>
+          <div class="msg-form"><input v-model="newMessage.nama" placeholder="Nama" /><textarea v-model="newMessage.pesan" placeholder="Ucapan..." rows="2"></textarea><button @click="sendMessage" :disabled="sendingMessage">💬 Kirim Doa</button></div>
         </div>
         
         <p class="footer">🌸 Terima kasih atas doa & kehadirannya 🌸</p>
       </div>
     </div>
 
-    <!-- LIGHTBOX -->
-    <div v-if="lightboxOpen" class="lightbox" @click="lightboxOpen = false">
-      <img :src="props.theme.gallery[lightboxIndex]" />
-      <button class="close-lightbox">✕</button>
-    </div>
-
-    <!-- AUDIO -->
+    <div v-if="lightboxOpen" class="lightbox" @click="lightboxOpen = false"><img :src="props.theme.gallery[lightboxIndex]" /><button class="close-lightbox">✕</button></div>
     <audio ref="bgMusic" loop><source :src="props.theme.music_url" type="audio/mpeg"></audio>
   </div>
 </template>
@@ -158,107 +91,47 @@ import confetti from 'canvas-confetti'
 
 const props = defineProps({ wedding: Object, theme: Object, guestName: String, guestSlug: String })
 
-const isOpen = ref(false)
-const isPlaying = ref(false)
-const bgMusic = ref(null)
-const rsvpStatus = ref(null)
-const submitting = ref(false)
-const messages = ref([])
-const sendingMessage = ref(false)
-const gifts = ref([])
-const lightboxOpen = ref(false)
-const lightboxIndex = ref(0)
+const isOpen = ref(false); const isPlaying = ref(false); const bgMusic = ref(null)
+const rsvpStatus = ref(null); const submitting = ref(false); const messages = ref([])
+const sendingMessage = ref(false); const gifts = ref([])
+const lightboxOpen = ref(false); const lightboxIndex = ref(0)
 const newMessage = reactive({ nama: '', pesan: '' })
-
-const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
-
 const countdown = reactive({ days: 0, hours: 0, minutes: 0 })
 let interval = null
+
+const eventType = computed(() => props.wedding.event_type || 'wedding')
+const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
+
+const getEventIcon = () => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[eventType.value] || '💍')
+const getCoverIcon = () => ({ wedding: '🌸', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏡' }[eventType.value] || '🌸')
+const getCoverTitle = () => ({ wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Pernikahan')
+const getEventLabel = () => ({ wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Pernikahan')
+const getTitle = () => eventType.value === 'wedding' ? `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}` : props.wedding.nama_pria || '...'
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
 const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
 const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
 
-const updateCountdown = () => {
-  if (!props.wedding.akad_date) return
-  const diff = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`).getTime() - Date.now()
-  if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = 0; return }
-  countdown.days = Math.floor(diff / 86400000)
-  countdown.hours = Math.floor((diff % 86400000) / 3600000)
-  countdown.minutes = Math.floor((diff % 3600000) / 60000)
-}
+const updateCountdown = () => { if (!props.wedding.akad_date) return; const diff = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`).getTime() - Date.now(); if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = 0; return } countdown.days = Math.floor(diff / 86400000); countdown.hours = Math.floor((diff % 86400000) / 3600000); countdown.minutes = Math.floor((diff % 3600000) / 60000) }
 
-const openEnvelope = async () => {
-  isOpen.value = true
-  confetti({ particleCount: 150, spread: 80, colors: ['#fbcfe8', '#f9a8d4', '#f472b6'] })
-  if (bgMusic.value && props.theme.music_url) {
-    try { await bgMusic.value.play(); isPlaying.value = true } catch {}
-  }
-}
-
-const toggleMusic = () => {
-  if (!bgMusic.value) return
-  isPlaying.value ? bgMusic.value.pause() : bgMusic.value.play()
-  isPlaying.value = !isPlaying.value
-}
-
+const openEnvelope = async () => { isOpen.value = true; confetti({ particleCount: 150, spread: 80, colors: ['#fbcfe8', '#f9a8d4', '#f472b6'] }); if (bgMusic.value && props.theme.music_url) { try { await bgMusic.value.play(); isPlaying.value = true } catch {} } }
+const toggleMusic = () => { if (!bgMusic.value) return; isPlaying.value ? bgMusic.value.pause() : bgMusic.value.play(); isPlaying.value = !isPlaying.value }
 const openMaps = (loc) => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank')
 const openLightbox = (i) => { lightboxIndex.value = i; lightboxOpen.value = true }
 const copyRekening = () => { navigator.clipboard.writeText(props.wedding.rekening); alert('✅ Rekening disalin!') }
+const submitRsvp = async () => { if (!props.guestSlug) return alert('Link tidak valid'); submitting.value = true; await supabase.from('guests').update({ status_hadir: rsvpStatus.value, jumlah_orang: 1 }).eq('unique_slug', props.guestSlug); submitting.value = false; alert('🌸 Terima kasih!') }
+const loadMessages = async () => { const { data } = await supabase.from('messages').select('*').eq('wedding_id', props.wedding.id).order('created_at', { ascending: false }).limit(20); messages.value = data || [] }
+const sendMessage = async () => { if (!newMessage.nama || !newMessage.pesan) return alert('Isi'); sendingMessage.value = true; await supabase.from('messages').insert([{ wedding_id: props.wedding.id, nama_pengirim: newMessage.nama, pesan: newMessage.pesan }]); newMessage.nama = newMessage.pesan = ''; await loadMessages(); sendingMessage.value = false }
+const loadGifts = async () => { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id); gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false })) }
+const claimGift = async (gift) => { if (!gift.resiInput) return alert('Masukkan resi'); gift.claiming = true; const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single(); await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id); gift.status = true; gift.buyer_name = props.guestName; gift.resi = gift.resiInput; gift.claiming = false; alert('🌸 Diklaim!') }
 
-const submitRsvp = async () => {
-  if (!props.guestSlug) return alert('Link tidak valid')
-  submitting.value = true
-  await supabase.from('guests').update({ status_hadir: rsvpStatus.value, jumlah_orang: 1 }).eq('unique_slug', props.guestSlug)
-  submitting.value = false
-  alert('🌸 Terima kasih!')
-}
-
-const loadMessages = async () => {
-  const { data } = await supabase.from('messages').select('*').eq('wedding_id', props.wedding.id).order('created_at', { ascending: false }).limit(20)
-  messages.value = data || []
-}
-
-const sendMessage = async () => {
-  if (!newMessage.nama || !newMessage.pesan) return alert('Isi nama dan pesan')
-  sendingMessage.value = true
-  await supabase.from('messages').insert([{ wedding_id: props.wedding.id, nama_pengirim: newMessage.nama, pesan: newMessage.pesan }])
-  newMessage.nama = newMessage.pesan = ''
-  await loadMessages()
-  sendingMessage.value = false
-}
-
-const loadGifts = async () => {
-  const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id)
-  gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false }))
-}
-
-const claimGift = async (gift) => {
-  if (!gift.resiInput || !gift.resiInput.trim()) return alert('❌ Masukkan nomor resi terlebih dahulu')
-  gift.claiming = true
-  try {
-    const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single()
-    await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id)
-    gift.status = true; gift.buyer_name = props.guestName || 'Anda'; gift.resi = gift.resiInput
-    alert('🌸 Kado berhasil diklaim! Terima kasih!')
-  } catch (err) {
-    alert('❌ Gagal klaim kado: ' + (err.message || 'Coba lagi'))
-  } finally {
-    gift.claiming = false
-  }
-}
-
-onMounted(async () => {
-  updateCountdown(); interval = setInterval(updateCountdown, 1000)
-  await loadMessages()
-  await loadGifts()
-})
+onMounted(async () => { updateCountdown(); interval = setInterval(updateCountdown, 1000); await loadMessages(); await loadGifts() })
 onUnmounted(() => clearInterval(interval))
 </script>
 
 <style scoped>
 .template-floral { min-height: 100vh; position: relative; font-family: 'Poppins', sans-serif; }
-.floral-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="8" fill="%23fbcfe8" opacity="0.3"/><circle cx="80" cy="30" r="10" fill="%23f9a8d4" opacity="0.2"/></svg>') center/200px; z-index: -1; }
+.floral-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="8" fill="%23fbcfe8" opacity="0.3"/></svg>') center/200px; z-index: -1; }
 .floral-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,240,245,0.95)); z-index: -1; }
 .cover-floral { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .cover-card { position: relative; }
@@ -302,15 +175,10 @@ onUnmounted(() => clearInterval(interval))
 .gift-price { font-size: 18px; font-weight: 700; color: #ec4899; margin: 8px 0; }
 .dibeli-badge { color: #059669; font-weight: 600; }
 .btn-buy { display: inline-block; background: linear-gradient(135deg, #f472b6, #ec4899); color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 600; margin-top: 8px; }
-/* FORM RESI - DIBUAT JELAS */
-.resi-form { padding: 15px; background: #fff5f9; border-top: 2px solid #f472b6; margin-top: 10px; }
-.resi-title { font-size: 13px; color: #831843; margin-bottom: 10px; font-weight: 600; }
-.resi-input-group { display: flex; gap: 8px; }
-.resi-input-group input { flex: 1; padding: 10px; border: 2px solid #fbcfe8; border-radius: 10px; font-size: 14px; }
-.resi-input-group input:focus { border-color: #f472b6; outline: none; }
-.btn-klaim { background: #059669; color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
-.btn-klaim:disabled { opacity: 0.6; }
-.buyer-info { padding: 12px 18px; background: #e8f5e9; font-size: 13px; color: #2e7d32; }
+.resi-form { display: flex; gap: 8px; padding: 12px; background: #fff5f9; }
+.resi-form input { flex: 1; padding: 8px; border: 1px solid #fbcfe8; border-radius: 8px; }
+.resi-form button { background: #059669; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+.buyer-info { padding: 10px 18px; background: #e8f5e9; font-size: 12px; }
 .gift-box { background: white; padding: 22px; border-radius: 22px; margin: 20px 0; border: 1px solid #fbcfe8; }
 .gift-box pre { background: #fdf2f8; padding: 12px; border-radius: 12px; text-align: left; margin: 12px 0; color: #831843; }
 .gift-box button { background: linear-gradient(135deg, #f472b6, #ec4899); color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; font-weight: 600; }
