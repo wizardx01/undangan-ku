@@ -24,39 +24,40 @@
       <button v-if="user?.plan === 'basic'" class="btn-upgrade" @click="upgradePlan">⬆️ Upgrade Premium (Rp 99rb)</button>
     </div>
 
-    <!-- SECTION: BUAT UNDANGAN BARU -->
+    <!-- SECTION: BUAT UNDANGAN BARU (ADMIN & USER BISA LIHAT) -->
     <div class="create-section">
       <h2>🎉 Buat Undangan Baru</h2>
       <p>Pilih jenis acara di bawah ini:</p>
       
       <div class="event-type-grid">
-        <div class="event-card" @click="createNewWedding('wedding')" :class="{ disabled: !canCreate }">
+        <div class="event-card" @click="createNewWedding('wedding')">
           <div class="event-icon">💍</div>
           <h3>Wedding</h3>
           <p>Pernikahan</p>
         </div>
         
-        <div class="event-card" @click="createNewWedding('sunatan')" :class="{ disabled: !canCreate }">
+        <div class="event-card" @click="createNewWedding('sunatan')">
           <div class="event-icon">✂️</div>
           <h3>Sunatan</h3>
           <p>Khitanan</p>
         </div>
         
-        <div class="event-card" @click="createNewWedding('aqiqah')" :class="{ disabled: !canCreate }">
+        <div class="event-card" @click="createNewWedding('aqiqah')">
           <div class="event-icon">👶</div>
           <h3>Aqiqah</h3>
           <p>Syukuran Kelahiran</p>
         </div>
         
-        <div class="event-card" @click="createNewWedding('syukuran')" :class="{ disabled: !canCreate }">
+        <div class="event-card" @click="createNewWedding('syukuran')">
           <div class="event-icon">🏠</div>
           <h3>Syukuran</h3>
           <p>Rumah Baru, Wisuda, dll</p>
         </div>
       </div>
       
-      <span v-if="!canCreate && user?.role !== 'admin'" class="limit-text">
-        ❌ Limit tercapai ({{ weddings.length }}/{{ planLimits.maxWeddings }})
+      <!-- Peringatan limit (hanya untuk user basic yang udah nyentuh limit) -->
+      <span v-if="showLimitWarning" class="limit-text">
+        ❌ Limit undangan tercapai ({{ weddings.length }}/{{ planLimits.maxWeddings }})
         <button @click="upgradePlan" class="btn-upgrade-inline">⬆️ Upgrade</button>
       </span>
     </div>
@@ -128,6 +129,11 @@ const canCreate = computed(() => {
   return planLimits.value.maxWeddings === Infinity || weddings.value.length < planLimits.value.maxWeddings
 })
 
+// Cuma tampilin warning kalau user basic & udah nyentuh limit
+const showLimitWarning = computed(() => {
+  return user.value?.role !== 'admin' && !canCreate.value
+})
+
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-'
 const getEventIcon = (t) => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[t] || '💍')
 const getEventLabel = (t) => ({ wedding: '💍 Wedding', sunatan: '✂️ Sunatan', aqiqah: '👶 Aqiqah', syukuran: '🏠 Syukuran' }[t] || '💍 Wedding')
@@ -152,7 +158,7 @@ const loadWeddings = async () => {
     const { data, error } = await query
     if (error) throw error
     
-    for (const w of data) {
+    for (const w of data || []) {
       const { count: guestCount } = await supabase.from('guests').select('*', { count: 'exact', head: true }).eq('wedding_id', w.id)
       const { count: giftCount } = await supabase.from('gifts').select('*', { count: 'exact', head: true }).eq('wedding_id', w.id).eq('status', true)
       w.guest_count = guestCount || 0
@@ -168,7 +174,12 @@ const loadWeddings = async () => {
 }
 
 const createNewWedding = (eventType) => {
-  if (!canCreate.value) return
+  // Admin selalu bisa, user cek limit
+  if (!canCreate.value) {
+    alert(`❌ Limit undangan tercapai! (${weddings.value.length}/${planLimits.value.maxWeddings})\n\nUpgrade ke Premium untuk undangan unlimited.`)
+    return
+  }
+  
   localStorage.removeItem('currentWeddingId')
   localStorage.removeItem('currentSlug')
   sessionStorage.setItem('selectedEventType', eventType)
@@ -243,7 +254,6 @@ onMounted(() => {
 .event-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
 .event-card { background: #f9fafb; border: 2px solid transparent; border-radius: 16px; padding: 25px 15px; cursor: pointer; transition: all 0.3s; text-align: center; }
 .event-card:hover { border-color: #9b87f5; background: #f5f0ff; transform: translateY(-5px); box-shadow: 0 10px 25px rgba(155,135,245,0.15); }
-.event-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 .event-icon { font-size: 48px; margin-bottom: 12px; }
 .event-card h3 { font-size: 16px; color: #2c3e50; margin-bottom: 4px; }
 .event-card p { font-size: 13px; color: #888; }
