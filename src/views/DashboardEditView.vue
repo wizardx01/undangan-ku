@@ -63,13 +63,13 @@
         </div>
 
         <!-- KUSTOMISASI -->
-        <div class="section"><h3>🎨 Kustomisasi</h3><label>Warna</label><div class="color-row"><input type="color" v-model="form.theme.primary_color" /></div><label>Font</label><select v-model="form.theme.font_family"><option>Poppins, sans-serif</option><option>'Playfair Display', serif</option><option>'Dancing Script', cursive</option></select><label>Background</label><select v-model="form.theme.background_type" @change="handleBgChange"><option value="solid">Warna</option><option value="image">Gambar</option></select><div v-if="form.theme.background_type === 'solid'"><input type="color" v-model="form.theme.background_value" /></div><div v-if="form.theme.background_type === 'image'"><input type="file" @change="uploadBackground" accept="image/*" /><img v-if="form.theme.background_value" :src="form.theme.background_value" class="preview-bg" /></div></div>
+        <div class="section"><h3>🎨 Kustomisasi</h3><label>Warna</label><div class="color-row"><input type="color" v-model="form.theme.primary_color" /></div><label>Font</label><select v-model="form.theme.font_family"><option>Poppins, sans-serif</option><option>'Playfair Display', serif</option><option>'Dancing Script', cursive</option></select><label>Background</label><select v-model="form.theme.background_type" @change="handleBgChange"><option value="solid">Warna</option><option value="image">Gambar</option></select><div v-if="form.theme.background_type === 'solid'"><input type="color" v-model="form.theme.background_value" /></div><div v-if="form.theme.background_type === 'image'"><input type="file" @change="uploadBackground" accept="image/*" /><div v-if="uploadingBg" class="loading-inline">⏳ Mengkompres & upload...</div><img v-if="form.theme.background_value" :src="form.theme.background_value" class="preview-bg" /></div></div>
 
         <!-- GALERI -->
-        <div class="section"><h3>🖼️ Galeri</h3><input type="file" @change="uploadGallery" accept="image/*" multiple /><div v-if="uploadingGallery" class="loading-inline">⏳ {{ uploadProgress }}</div><div class="gallery-preview"><div v-for="(img, idx) in form.gallery" :key="idx" class="gallery-item"><img :src="img" /><button @click="removeImage(idx)">✕</button></div></div></div>
+        <div class="section"><h3>🖼️ Galeri</h3><input type="file" @change="uploadGallery" accept="image/*" multiple /><div v-if="uploadingGallery" class="loading-inline">⏳ Mengkompres & upload... {{ uploadProgress }}</div><div class="gallery-preview"><div v-for="(img, idx) in form.gallery" :key="idx" class="gallery-item"><img :src="img" /><button @click="removeImage(idx)">✕</button></div></div><small>Maks 10MB per gambar. Gambar akan otomatis dikompres.</small></div>
 
-        <!-- MUSIK -->
-        <div class="section"><h3>🎵 Musik</h3><input type="file" @change="uploadMusic" accept="audio/*" /><div v-if="uploadingMusic" class="loading-inline">⏳ Upload...</div><label>Atau URL</label><input v-model="form.theme.music_url" placeholder="https://..." /></div>
+        <!-- MUSIK (HANYA UPLOAD FILE) -->
+        <div class="section"><h3>🎵 Musik Latar</h3><input type="file" @change="uploadMusic" accept="audio/*" /><div v-if="uploadingMusic" class="loading-inline">⏳ Upload musik...</div><small>Upload file MP3/WAV. Musik akan otomatis diputar saat undangan dibuka.</small></div>
 
         <!-- KISAH CINTA (LOVE STORY) -->
         <div class="section">
@@ -86,16 +86,19 @@
                 <div class="form-group"><label>Tanggal</label><input v-model="story.date" placeholder="25 Desember 2020" /></div>
               </div>
               <div class="form-group"><label>Deskripsi Singkat</label><textarea v-model="story.description" rows="2" placeholder="Cerita singkat momen ini..."></textarea></div>
-              <div class="form-group"><label>Icon</label>
-                <select v-model="story.icon">
-                  <option value="💕">💕 Jatuh Cinta</option>
-                  <option value="💍">💍 Lamaran</option>
-                  <option value="👀">👀 Pertama Bertemu</option>
-                  <option value="💌">💌 Chat Pertama</option>
-                  <option value="🎉">🎉 Anniversary</option>
-                  <option value="💒">💒 Menikah</option>
-                  <option value="👶">👶 Kelahiran</option>
-                </select>
+              <div class="form-row">
+                <div class="form-group"><label>Icon</label>
+                  <select v-model="story.icon">
+                    <option value="💕">💕 Jatuh Cinta</option><option value="💍">💍 Lamaran</option><option value="👀">👀 Bertemu</option>
+                    <option value="💌">💌 Chat</option><option value="🎉">🎉 Anniversary</option><option value="👶">👶 Kelahiran</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Foto Momen (Opsional)</label>
+                  <input type="file" @change="uploadStoryPhoto($event, idx)" accept="image/*" />
+                  <div v-if="story.photo_uploading" class="loading-inline">⏳ Upload...</div>
+                  <img v-if="story.photo" :src="story.photo" class="story-photo-preview" />
+                </div>
               </div>
             </div>
             <button type="button" @click="addLoveStory" class="btn-add-story">➕ Tambah Cerita Cinta</button>
@@ -129,21 +132,87 @@
       </form>
     </div>
 
-    <!-- PANEL KANAN: PREVIEW -->
+    <!-- PANEL KANAN: PREVIEW (DINAMIS SESUAI TEMPLATE) -->
     <div class="panel-kanan">
+      <!-- ELEGAN PREVIEW -->
       <div v-if="form.template === 'elegan'" class="mockup-hp" :style="previewStyles"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover"><div class="cover-decoration">{{ getMockupIcon() }}</div><p class="cover-subtitle">{{ getMockupCoverTitle() }}</p><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Acara' }}</p><div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div><button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button></div>
-        <div v-else class="preview-content"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="mock-countdown"><span>00 Hari</span><span>00 Jam</span><span>00 Mnt</span></div><div class="mock-event"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
+        <div v-if="previewMode === 'cover'" class="preview-cover">
+          <div class="cover-decoration">{{ getMockupIcon() }}</div>
+          <p class="cover-subtitle">{{ getMockupCoverTitle() }}</p>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Acara' }}</p>
+          <div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div>
+          <button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button>
+        </div>
+        <div v-else class="preview-content">
+          <button class="mock-back-btn" @click="previewMode = 'cover'">←</button>
+          <div class="bismillah">﷽</div>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <div class="mock-countdown"><span>00 Hari</span><span>00 Jam</span><span>00 Mnt</span></div>
+          <div class="mock-event"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div>
+          <!-- LOVE STORY PREVIEW -->
+          <div class="mock-timeline" v-if="form.love_story && form.love_story.length > 0">
+            <h4>💕 Kisah Cinta</h4>
+            <div v-for="(story, idx) in form.love_story.slice(0, 2)" :key="idx" class="mock-timeline-item">
+              <span>{{ story.icon || '💕' }}</span>
+              <span>{{ story.title || '...' }}</span>
+            </div>
+            <p v-if="form.love_story.length > 2">...dan {{ form.love_story.length - 2 }} cerita lainnya</p>
+          </div>
+          <div class="mock-qr"><p>📱 QR Code (otomatis)</p></div>
+        </div>
       </div></div>
 
+      <!-- MINIMALIS PREVIEW -->
       <div v-else-if="form.template === 'minimalis'" class="mockup-hp minimalis-preview"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover-minimalis"><div class="cover-icon">{{ getMockupIcon() }}</div><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka</button></div>
-        <div v-else class="preview-content-minimalis"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
+        <div v-if="previewMode === 'cover'" class="preview-cover-minimalis">
+          <div class="cover-icon">{{ getMockupIcon() }}</div>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
+          <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
+          <button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka</button>
+        </div>
+        <div v-else class="preview-content-minimalis">
+          <button class="mock-back-btn" @click="previewMode = 'cover'">←</button>
+          <div class="bismillah">﷽</div>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div>
+          <div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div>
+          <div class="mock-timeline" v-if="form.love_story && form.love_story.length > 0">
+            <h4>💕 Kisah Cinta</h4>
+            <div v-for="(story, idx) in form.love_story.slice(0, 2)" :key="idx" class="mock-timeline-item">
+              <span>{{ story.icon || '💕' }}</span>
+              <span>{{ story.title || '...' }}</span>
+            </div>
+          </div>
+          <div class="mock-qr"><p>📱 QR Code (otomatis)</p></div>
+        </div>
       </div></div>
 
+      <!-- FLORAL PREVIEW -->
       <div v-else-if="form.template === 'floral'" class="mockup-hp floral-preview"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover-floral"><div class="floral-border"><div class="cover-icon">{{ getMockupIcon() }}</div><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka</button></div></div>
-        <div v-else class="preview-content-floral"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
+        <div v-if="previewMode === 'cover'" class="preview-cover-floral"><div class="floral-border">
+          <div class="cover-icon">{{ getMockupIcon() }}</div>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
+          <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
+          <button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka</button>
+        </div></div>
+        <div v-else class="preview-content-floral">
+          <button class="mock-back-btn" @click="previewMode = 'cover'">←</button>
+          <div class="bismillah">﷽</div>
+          <h1>{{ getPreviewTitle() }}</h1>
+          <div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div>
+          <div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div>
+          <div class="mock-timeline" v-if="form.love_story && form.love_story.length > 0">
+            <h4>💕 Kisah Cinta</h4>
+            <div v-for="(story, idx) in form.love_story.slice(0, 2)" :key="idx" class="mock-timeline-item">
+              <span>{{ story.icon || '💕' }}</span>
+              <span>{{ story.title || '...' }}</span>
+            </div>
+          </div>
+          <div class="mock-qr"><p>📱 QR Code (otomatis)</p></div>
+        </div>
       </div></div>
 
       <div class="preview-controls"><p class="preview-label">📱 Preview {{ form.template }}</p><div class="mode-switch"><button @click="previewMode = 'cover'" :class="{ active: previewMode === 'cover' }">Cover</button><button @click="previewMode = 'content'" :class="{ active: previewMode === 'content' }">Isi</button></div></div>
@@ -217,12 +286,29 @@ const handleBgChange = () => { form.theme.background_value = form.theme.backgrou
 const removeImage = (i) => form.gallery.splice(i, 1)
 
 // Love Story Functions
-const addLoveStory = () => { form.love_story.push({ title: '', date: '', description: '', icon: '💕' }) }
+const addLoveStory = () => { form.love_story.push({ title: '', date: '', description: '', icon: '💕', photo: '', photo_uploading: false }) }
 const removeLoveStory = (idx) => { form.love_story.splice(idx, 1) }
 
-const uploadBackground = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) { showError(null, 'Max 10MB'); return }; uploadingBg.value = true; try { const c = await imageCompression(f, { maxSizeMB: 0.5, maxWidthOrHeight: 1200 }); const { data } = await supabase.storage.from('weddings').upload(`bg-${Date.now()}.${f.name.split('.').pop()}`, c); form.theme.background_value = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Uploaded!') } catch { showError(null, 'Gagal') } finally { uploadingBg.value = false; e.target.value = '' } }
-const uploadGallery = async (e) => { const files = Array.from(e.target.files); if (!files.length) return; uploadingGallery.value = true; let up = 0; try { for (const f of files) { uploadProgress.value = `${up}/${files.length}`; if (!f.type.startsWith('image/')) continue; if (f.size > 10*1024*1024) continue; const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 800 }); const { data } = await supabase.storage.from('weddings').upload(`gal-${Date.now()}-${Math.random().toString(36).slice(2)}.${f.name.split('.').pop()}`, c); form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl); up++ } if (up > 0) showSuccess(`${up} foto!`) } catch { showError(null, 'Gagal') } finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' } }
-const uploadMusic = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 20*1024*1024) { showError(null, 'Max 20MB'); return }; uploadingMusic.value = true; try { const { data } = await supabase.storage.from('weddings').upload(`mus-${Date.now()}.${f.name.split('.').pop()}`, f, { contentType: 'audio/mpeg' }); form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Musik!') } catch { showError(null, 'Gagal') } finally { uploadingMusic.value = false; e.target.value = '' } }
+const uploadStoryPhoto = async (e, idx) => {
+  const f = e.target.files[0]; if (!f) return
+  if (f.size > 5*1024*1024) { showError(null, 'Max 5MB'); return }
+  form.love_story[idx].photo_uploading = true
+  try {
+    const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 600 })
+    const fileName = `story-${Date.now()}-${idx}.${f.name.split('.').pop()}`
+    const { data, error } = await supabase.storage.from('weddings').upload(fileName, c)
+    if (error) throw error
+    form.love_story[idx].photo = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl
+  } catch { showError(null, 'Gagal upload foto') }
+  finally { form.love_story[idx].photo_uploading = false; e.target.value = '' }
+}
+
+// UPLOAD FUNCTIONS (DENGAN KOMPRESI)
+const uploadBackground = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) { showError(null, 'Max 10MB'); return }; uploadingBg.value = true; try { const c = await imageCompression(f, { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true }); const { data } = await supabase.storage.from('weddings').upload(`bg-${Date.now()}.${f.name.split('.').pop()}`, c); form.theme.background_value = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Background diupload & dikompres!') } catch { showError(null, 'Gagal') } finally { uploadingBg.value = false; e.target.value = '' } }
+
+const uploadGallery = async (e) => { const files = Array.from(e.target.files); if (!files.length) return; uploadingGallery.value = true; let up = 0; try { for (const f of files) { uploadProgress.value = `${up}/${files.length}`; if (!f.type.startsWith('image/')) continue; if (f.size > 10*1024*1024) { showError(null, `${f.name} terlalu besar`); continue } const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true }); const { data } = await supabase.storage.from('weddings').upload(`gal-${Date.now()}-${Math.random().toString(36).slice(2)}.${f.name.split('.').pop()}`, c); form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl); up++ } if (up > 0) showSuccess(`${up} gambar diupload & dikompres!`) } catch { showError(null, 'Gagal') } finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' } }
+
+const uploadMusic = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 20*1024*1024) { showError(null, 'Max 20MB'); return }; uploadingMusic.value = true; try { const { data } = await supabase.storage.from('weddings').upload(`mus-${Date.now()}.${f.name.split('.').pop()}`, f, { contentType: 'audio/mpeg' }); form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Musik diupload!') } catch { showError(null, 'Gagal') } finally { uploadingMusic.value = false; e.target.value = '' } }
 
 const saveWedding = async () => {
   if (!form.nama_pria || !form.akad_date || !form.akad_time || !form.akad_location) { showError(null, 'Isi data wajib!'); return }
@@ -233,19 +319,18 @@ const saveWedding = async () => {
         nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
         resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
         orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
-        event_type: form.event_type, template: form.template, love_story: form.love_story,
+        event_type: form.event_type, template: form.template, love_story: form.love_story.map(s => ({ title: s.title, date: s.date, description: s.description, icon: s.icon, photo: s.photo || '' })),
         theme_settings: { ...form.theme, gallery: form.gallery }
       }).eq('id', currentWeddingId.value)
       showSuccess('Diupdate!')
     } else {
-      const { allowed, message } = await canCreateWedding(supabase)
-      if (!allowed) { alert(message); return }
+      const { allowed, message } = await canCreateWedding(supabase); if (!allowed) { alert(message); return }
       const slug = `${(form.nama_pria || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`
       const { data } = await supabase.from('weddings').insert([{
         nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
         resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
         orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
-        event_type: form.event_type, template: form.template, love_story: form.love_story, slug,
+        event_type: form.event_type, template: form.template, love_story: form.love_story.map(s => ({ title: s.title, date: s.date, description: s.description, icon: s.icon, photo: s.photo || '' })), slug,
         theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true,
         expired_at: new Date(Date.now() + 30*24*60*60*1000), user_id: user.value?.id || null
       }]).select()
@@ -317,6 +402,7 @@ onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) 
 .btn-upgrade { margin-left: auto; padding: 8px 16px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .limit-reached { background: #fef2f2; padding: 15px; border-radius: 8px; text-align: center; }
 .limit-reached p { color: #ef4444; font-weight: 600; margin-bottom: 8px; }
+.loading-inline { color: #9b87f5; margin-top: 8px; font-style: italic; font-size: 13px; }
 .section { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
 .section h3 { margin-bottom: 15px; }
 .section-desc { font-size: 13px; color: #888; margin-bottom: 15px; }
@@ -324,6 +410,11 @@ label { display: block; margin-top: 12px; font-weight: 600; color: #555; font-si
 input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
 .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .form-row input, .form-row select { flex: 1; }
+.preview-bg { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
+.gallery-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.gallery-item { position: relative; width: 100px; height: 100px; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.gallery-item button { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
 .template-selector { display: flex; gap: 12px; margin-top: 10px; }
 .template-option { flex: 1; text-align: center; cursor: pointer; padding: 12px 8px; border-radius: 12px; border: 2px solid transparent; background: white; }
 .template-option.active { border-color: #9b87f5; }
@@ -342,6 +433,8 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .link-box { display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; }
 .link-box code { flex: 1; font-size: 12px; word-break: break-all; }
 .preview-btn { width: 100%; margin-top: 10px; padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+small { display: block; margin-top: 5px; font-size: 12px; color: #888; }
+
 .gift-summary-box { margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; }
 .gift-summary-header { display: flex; justify-content: space-between; align-items: center; }
 .btn-refresh { background: white; border: 1px solid #fcd34d; padding: 8px 16px; border-radius: 50px; cursor: pointer; font-weight: 600; }
@@ -372,14 +465,16 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .guest-filter select { flex: 1; }
 .dibeli { color: #4caf50; font-weight: 700; }
 
-/* LOVE STORY FORM */
+/* LOVE STORY */
 .love-story-form { margin-top: 10px; }
 .story-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
 .story-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .story-number { font-weight: 700; color: #9b87f5; font-size: 14px; }
 .btn-del-sm { background: #fee2e2; color: #ef4444; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
 .btn-add-story { width: 100%; padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 5px; }
+.story-photo-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; margin-top: 8px; }
 
+/* PANEL KANAN */
 .panel-kanan { width: 55%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
 .mockup-hp { width: 360px; height: 680px; background: white; border-radius: 45px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 10px solid #1a1a1a; overflow-y: auto; }
 .hp-content { text-align: center; }
@@ -399,6 +494,13 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .event-mini { background: white; border: 1px solid #eee; }
 .mock-event h4, .event-mini h4 { margin-bottom: 5px; font-size: 14px; }
 .bismillah { font-size: 32px; opacity: 0.6; margin-bottom: 10px; }
+/* LOVE STORY PREVIEW */
+.mock-timeline { background: #f9f9f9; padding: 10px; border-radius: 10px; margin: 10px 0; text-align: left; }
+.mock-timeline h4 { font-size: 12px; margin-bottom: 8px; }
+.mock-timeline-item { display: flex; gap: 8px; padding: 4px 0; font-size: 11px; }
+.mock-qr { background: #f9f9f9; padding: 8px; border-radius: 10px; margin: 10px 0; }
+.mock-qr p { font-size: 11px; color: #888; }
+
 .minimalis-preview { background: #fafafa !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-minimalis { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 560px; text-align: center; padding: 20px; }
 .preview-cover-minimalis .cover-icon { font-size: 50px; margin-bottom: 15px; }
@@ -409,6 +511,7 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .minimalis-btn { background: #2c3e50 !important; }
 .preview-content-minimalis { text-align: center; padding: 20px 10px; }
 .preview-content-minimalis h1 { font-size: 24px; font-weight: 300; color: #2c3e50; }
+
 .floral-preview { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,240,245,0.95)) !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-floral { display: flex; justify-content: center; align-items: center; min-height: 560px; padding: 15px; }
 .floral-border { border: 3px solid #fbcfe8; border-radius: 25px; padding: 30px 20px; text-align: center; background: white; width: 100%; box-shadow: 0 10px 30px rgba(244,114,182,0.1); }
@@ -420,6 +523,7 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .floral-btn { background: linear-gradient(135deg, #f472b6, #ec4899) !important; }
 .preview-content-floral { text-align: center; padding: 20px 10px; }
 .preview-content-floral h1 { font-size: 24px; color: #831843; font-family: 'Playfair Display', serif; }
+
 .preview-controls { margin-top: 15px; text-align: center; }
 .preview-label { color: white; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
 .mode-switch { display: flex; gap: 8px; justify-content: center; }
