@@ -1,5 +1,6 @@
 <template>
   <div class="template-minimalis">
+    <!-- COVER -->
     <div v-if="!isOpen" class="cover-minimalis">
       <div class="cover-card">
         <div class="cover-icon">{{ getCoverIcon() }}</div>
@@ -11,6 +12,7 @@
       </div>
     </div>
     
+    <!-- ISI -->
     <div v-else class="content-minimalis">
       <div class="container">
         <div class="top-actions"><button class="icon-btn" @click="toggleMusic">{{ isPlaying ? '🔊' : '🔈' }}</button></div>
@@ -19,6 +21,7 @@
         <p class="orangtua" v-if="props.wedding.event_type === 'wedding'">{{ props.wedding.orangtua_pria || '...' }} & {{ props.wedding.orangtua_wanita || '...' }}</p>
         <p class="orangtua" v-else>{{ props.wedding.nama_wanita || '' }}</p>
         
+        <!-- COUNTDOWN -->
         <div class="countdown"><h3>⏳ Menuju Hari Bahagia</h3>
           <div class="countdown-grid">
             <div class="countdown-item"><span class="value">{{ countdown.days }}</span><span class="label">Hari</span></div>
@@ -29,21 +32,54 @@
 
         <div class="guest-section"><p>Yang terhormat</p><p class="guest-name-display">{{ displayGuestName }}</p></div>
         
+        <!-- AKAD -->
         <div class="event"><h3>{{ getEventIcon() }} {{ getEventLabel() }}</h3>
           <p><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p>
           <p><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p>
           <p><span>📍</span> {{ props.wedding.akad_location }}</p>
           <button class="btn-map" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button>
+          <!-- CALENDAR -->
+          <div class="calendar-section" v-if="props.wedding.akad_date">
+            <add-to-calendar-button
+              :name="getTitleText() + ' - ' + getEventLabel()"
+              :description="'Acara ' + getEventLabel()"
+              :startDate="formatCalendarDate(props.wedding.akad_date)"
+              :startTime="props.wedding.akad_time?.substring(0,5)"
+              :location="props.wedding.akad_location"
+              options="'Google','Apple','Outlook.com'"
+              timeZone="Asia/Jakarta"
+              language="id"
+              hideTextLabelButton
+            ></add-to-calendar-button>
+          </div>
         </div>
         
+        <!-- RESEPSI -->
         <div class="event" v-if="props.wedding.event_type === 'wedding' && props.wedding.resepsi_date"><h3>🎉 Resepsi</h3>
           <p>{{ formatDate(props.wedding.resepsi_date) }}</p>
           <p>{{ formatTime(props.wedding.resepsi_time) }}</p>
           <p>{{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
         </div>
         
+        <!-- LOVE STORY -->
+        <div class="love-story-section" v-if="props.wedding.love_story && props.wedding.love_story.length > 0">
+          <h3>💕 Kisah Cinta Kami</h3>
+          <div class="timeline">
+            <div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item">
+              <div class="timeline-icon">{{ story.icon || '💕' }}</div>
+              <div class="timeline-content">
+                <h4>{{ story.title }}</h4>
+                <p class="timeline-date">{{ story.date }}</p>
+                <p>{{ story.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- GALLERY -->
         <div class="gallery" v-if="props.theme.gallery?.length"><img v-for="(img, i) in props.theme.gallery" :key="i" :src="img" @click="openLightbox(i)" /></div>
         
+        <!-- GIFT REGISTRY -->
         <div class="gift-section" v-if="gifts.length > 0"><h3>🎁 Kirim Kado</h3>
           <div class="gift-grid"><div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }">
             <img v-if="gift.image" :src="gift.image" class="gift-img" />
@@ -56,16 +92,34 @@
           </div></div>
         </div>
         
+        <!-- AMPLOP -->
         <div class="amplop" v-if="props.wedding.rekening"><h3>💝 Amplop Digital</h3><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening">📋 Salin</button></div>
         
+        <!-- RSVP -->
         <div class="rsvp"><h3>Konfirmasi Kehadiran</h3>
           <div class="rsvp-buttons"><button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }">✅ Hadir</button><button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }">❌ Tidak</button></div>
           <button @click="submitRsvp" :disabled="submitting" class="btn-submit">Kirim Konfirmasi</button>
         </div>
         
+        <!-- PESAN -->
         <div class="messages"><h3>💬 Ucapan & Doa</h3>
           <div class="msg-list"><div v-for="msg in messages" :key="msg.id" class="msg-item"><strong>{{ msg.nama_pengirim }}</strong><p>{{ msg.pesan }}</p><small>{{ formatTime(msg.created_at) }}</small></div></div>
           <div class="msg-form"><input v-model="newMessage.nama" placeholder="Nama" /><textarea v-model="newMessage.pesan" placeholder="Ucapan..." rows="2"></textarea><button @click="sendMessage" :disabled="sendingMessage">Kirim Doa</button></div>
+        </div>
+        
+        <!-- IG STORY TEMPLATE -->
+        <IGStoryTemplate 
+          :wedding-name="getTitleText()" 
+          :akad-date="props.wedding.akad_date"
+          :event-type="eventType"
+          :image-url="props.theme.gallery?.[0]"
+        />
+
+        <!-- QR CODE -->
+        <div class="qr-section" v-if="props.wedding.slug">
+          <h4>📱 QR Code Check-in</h4>
+          <canvas ref="qrCanvas"></canvas>
+          <p>Scan QR ini untuk check-in</p>
         </div>
         
         <p class="footer">Terima kasih atas doa & kehadirannya</p>
@@ -81,6 +135,9 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import confetti from 'canvas-confetti'
+import QRCode from 'qrcode'
+import 'add-to-calendar-button'
+import IGStoryTemplate from '../../components/IGStoryTemplate.vue'
 
 const props = defineProps({ wedding: Object, theme: Object, guestName: String, guestSlug: String })
 
@@ -90,6 +147,7 @@ const sendingMessage = ref(false); const gifts = ref([])
 const lightboxOpen = ref(false); const lightboxIndex = ref(0)
 const newMessage = reactive({ nama: '', pesan: '' })
 const countdown = reactive({ days: 0, hours: 0, minutes: 0 })
+const qrCanvas = ref(null)
 let interval = null
 
 const eventType = computed(() => props.wedding.event_type || 'wedding')
@@ -98,14 +156,13 @@ const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i'
 const getEventIcon = () => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[eventType.value] || '💍')
 const getCoverIcon = () => ({ wedding: '✨', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏡' }[eventType.value] || '✨')
 const getEventLabel = () => ({ wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Pernikahan')
-const getTitle = () => {
-  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}`
-  return props.wedding.nama_pria || '...'
-}
+const getTitle = () => eventType.value === 'wedding' ? `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}` : props.wedding.nama_pria || '...'
+const getTitleText = () => eventType.value === 'wedding' ? `${props.wedding.nama_pria || ''} & ${props.wedding.nama_wanita || ''}` : props.wedding.nama_pria || ''
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
 const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
 const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
+const formatCalendarDate = (d) => d ? d.replace(/-/g, '') : ''
 
 const updateCountdown = () => { if (!props.wedding.akad_date) return; const diff = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`).getTime() - Date.now(); if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = 0; return } countdown.days = Math.floor(diff / 86400000); countdown.hours = Math.floor((diff % 86400000) / 3600000); countdown.minutes = Math.floor((diff % 3600000) / 60000) }
 
@@ -120,7 +177,12 @@ const sendMessage = async () => { if (!newMessage.nama || !newMessage.pesan) ret
 const loadGifts = async () => { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id); gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false })) }
 const claimGift = async (gift) => { if (!gift.resiInput) return alert('Masukkan resi'); gift.claiming = true; const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single(); await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id); gift.status = true; gift.buyer_name = props.guestName; gift.resi = gift.resiInput; gift.claiming = false; alert('✅ Diklaim!') }
 
-onMounted(async () => { updateCountdown(); interval = setInterval(updateCountdown, 1000); await loadMessages(); await loadGifts() })
+const generateQR = async () => {
+  if (!qrCanvas.value || !props.wedding?.slug) return
+  try { await QRCode.toCanvas(qrCanvas.value, `${window.location.origin}/wedding/${props.wedding.slug}`, { width: 180, margin: 2 }) } catch {}
+}
+
+onMounted(async () => { updateCountdown(); interval = setInterval(updateCountdown, 1000); await loadMessages(); await loadGifts(); setTimeout(generateQR, 500) })
 onUnmounted(() => clearInterval(interval))
 </script>
 
@@ -153,6 +215,19 @@ onUnmounted(() => clearInterval(interval))
 .event h3 { margin-bottom: 15px; font-weight: 500; }
 .event p { margin: 6px 0; display: flex; align-items: center; gap: 8px; }
 .btn-map { background: #2c3e50; color: white; border: none; padding: 10px 15px; border-radius: 10px; margin-top: 12px; cursor: pointer; width: 100%; font-weight: 500; }
+.calendar-section { margin-top: 15px; text-align: center; }
+
+/* LOVE STORY */
+.love-story-section { margin: 35px 0; text-align: left; }
+.love-story-section h3 { text-align: center; margin-bottom: 20px; }
+.timeline { position: relative; padding-left: 30px; border-left: 2px solid #2c3e50; }
+.timeline-item { display: flex; gap: 15px; margin-bottom: 25px; position: relative; }
+.timeline-icon { width: 40px; height: 40px; background: #2c3e50; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; position: absolute; left: -51px; }
+.timeline-content { flex: 1; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+.timeline-content h4 { margin-bottom: 5px; color: #2c3e50; }
+.timeline-date { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+.timeline-content p { font-size: 14px; color: #555; }
+
 .gallery { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; margin: 25px 0; }
 .gallery img { width: 200px; height: 250px; object-fit: cover; border-radius: 15px; cursor: pointer; }
 .gift-section { margin: 30px 0; }
@@ -182,6 +257,10 @@ onUnmounted(() => clearInterval(interval))
 .msg-form { display: flex; flex-direction: column; gap: 8px; }
 .msg-form input, .msg-form textarea { padding: 10px; border: 1px solid #ddd; border-radius: 10px; }
 .msg-form button { background: #2c3e50; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; }
+.qr-section { text-align: center; margin: 30px 0; padding: 20px; background: white; border-radius: 20px; }
+.qr-section h4 { margin-bottom: 15px; color: #2c3e50; }
+.qr-section canvas { border-radius: 10px; }
+.qr-section p { margin-top: 10px; font-size: 13px; color: #666; }
 .footer { margin-top: 40px; opacity: 0.5; font-size: 14px; }
 .lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .lightbox img { max-width: 90%; max-height: 90%; border-radius: 15px; }
