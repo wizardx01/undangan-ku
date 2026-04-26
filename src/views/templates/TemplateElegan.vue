@@ -12,7 +12,7 @@
         <div class="cover-frame">
           <div class="cover-decoration">{{ getCoverIcon() }}</div>
           <h2 class="cover-subtitle">{{ getCoverTitle() }}</h2>
-          <h1 class="cover-title">{{ getTitle() }}</h1>
+          <h1 class="cover-title" v-html="getTitle()"></h1>
           <div class="cover-date">{{ formatDate(props.wedding.akad_date) }}</div>
           <div class="guest-welcome"><p>Kepada Yth.</p><strong>{{ displayGuestName }}</strong></div>
           <button class="btn-open" @click="openEnvelope"><span>💌 Buka Undangan</span></button>
@@ -31,7 +31,7 @@
         </div>
 
         <div class="section-names" data-aos="fade-up" data-aos-delay="100">
-          <div class="names-container"><h1 class="wedding-title">{{ getTitle() }}</h1></div>
+          <div class="names-container"><h1 class="wedding-title" v-html="getTitle()"></h1></div>
           <p class="parents-name" v-if="props.wedding.event_type === 'wedding'">Putra dari {{ props.wedding.orangtua_pria || '...' }}<br>&<br>Putri dari {{ props.wedding.orangtua_wanita || '...' }}</p>
           <p class="parents-name" v-else>{{ props.wedding.nama_wanita ? 'Putra dari ' + props.wedding.nama_wanita : '' }}</p>
         </div>
@@ -68,20 +68,19 @@
           <div class="event-card">
             <div class="event-header"><div class="event-icon">{{ getEventIcon() }}</div><h4>{{ getEventLabel() }}</h4></div>
             <div class="event-details">
-              <p class="event-date"><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p>
-              <p class="event-time"><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p>
-              <p class="event-location"><span>📍</span> {{ props.wedding.akad_location }}</p>
+              <p><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p>
+              <p><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p>
+              <p><span>📍</span> {{ props.wedding.akad_location }}</p>
             </div>
             <button class="btn-map-small" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button>
           </div>
           <div class="event-card" v-if="props.wedding.event_type === 'wedding' && props.wedding.resepsi_date">
-            <div class="event-header"><div class="event-icon">🎉</div><h4>Resepsi Pernikahan</h4></div>
+            <div class="event-header"><div class="event-icon">🎉</div><h4>Resepsi</h4></div>
             <div class="event-details">
-              <p class="event-date"><span>📆</span> {{ formatDate(props.wedding.resepsi_date) }}</p>
-              <p class="event-time"><span>🕐</span> {{ formatTime(props.wedding.resepsi_time) }}</p>
-              <p class="event-location"><span>📍</span> {{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
+              <p><span>📆</span> {{ formatDate(props.wedding.resepsi_date) }}</p>
+              <p><span>🕐</span> {{ formatTime(props.wedding.resepsi_time) }}</p>
+              <p><span>📍</span> {{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
             </div>
-            <button class="btn-map-small" @click="openMaps(props.wedding.resepsi_location || props.wedding.akad_location)">🗺️ Buka Google Maps</button>
           </div>
         </div>
 
@@ -93,22 +92,18 @@
         </div>
 
         <div class="section-wishes" data-aos="fade-up" data-aos-delay="700">
-          <div class="wishes-box">
-            <div class="wishes-icon">💕</div>
+          <div class="wishes-box"><div class="wishes-icon">💕</div>
             <p class="wishes-text">"Semoga Allah memberkahi acara ini, menjadikannya penuh kebahagiaan dan keberkahan."</p>
-            <p class="wishes-signature">— {{ getTitle() }}</p>
+            <p class="wishes-signature">— {{ getTitleText() }}</p>
           </div>
         </div>
 
         <div class="section-gifts" data-aos="fade-up" data-aos-delay="800" v-if="gifts.length > 0">
           <h3 class="section-title">🎁 Kirim Kado</h3>
-          <p class="gift-message">Berikut beberapa kado yang diinginkan:</p>
           <div class="gift-grid">
             <div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }">
               <div class="gift-card-image" v-if="gift.image"><img :src="gift.image" /></div>
-              <div class="gift-card-content">
-                <h4>{{ gift.name }}</h4>
-                <p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
+              <div class="gift-card-content"><h4>{{ gift.name }}</h4><p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
                 <p class="gift-status-badge" v-if="gift.status">✅ Sudah Dibeli</p>
                 <a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a>
               </div>
@@ -144,7 +139,7 @@
           <div class="closing-decoration">✨</div>
           <p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu.</p>
           <p class="closing-signature">Wassalamu'alaikum Wr. Wb.</p>
-          <div class="virtual-signature">{{ getTitle() }}</div>
+          <div class="virtual-signature">{{ getTitleText() }}</div>
           <p class="copyright">© {{ new Date().getFullYear() }} UndanganKu • Made with ❤️</p>
         </div>
       </div>
@@ -179,39 +174,7 @@ const newMessage = reactive({ nama: '', pesan: '' })
 const countdown = reactive({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 let countdownInterval = null
 
-// DYNAMIC CONTENT BASED ON EVENT TYPE
 const eventType = computed(() => props.wedding.event_type || 'wedding')
-
-const getEventIcon = () => {
-  const icons = { wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }
-  return icons[eventType.value] || '💍'
-}
-
-const getFloatingEmoji = () => {
-  const emojis = { wedding: '🌸', sunatan: '⭐', aqiqah: '🍼', syukuran: '🏡' }
-  return emojis[eventType.value] || '🌸'
-}
-
-const getCoverTitle = () => {
-  const titles = { wedding: 'The Wedding Of', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }
-  return titles[eventType.value] || 'The Wedding Of'
-}
-
-const getCoverIcon = () => {
-  const icons = { wedding: '💐', sunatan: '🕌', aqiqah: '👶', syukuran: '🏠' }
-  return icons[eventType.value] || '💐'
-}
-
-const getEventLabel = () => {
-  const labels = { wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }
-  return labels[eventType.value] || 'Pernikahan'
-}
-
-const getTitle = () => {
-  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'} & ${props.wedding.nama_wanita || '...'}`
-  return props.wedding.nama_pria || '...'
-}
-
 const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
 const bgStyle = computed(() => ({ backgroundImage: props.theme.background_type === 'image' ? `url(${props.theme.background_value})` : 'none', backgroundColor: props.theme.background_type === 'solid' ? props.theme.background_value : 'transparent' }))
 const coverStyle = computed(() => ({ '--primary': props.theme.primary_color || '#9b87f5', fontFamily: props.theme.font_family || 'Poppins, sans-serif' }))
@@ -219,39 +182,39 @@ const musicUrl = computed(() => props.theme.music_url || '')
 
 const countdownTarget = computed(() => {
   if (!props.wedding) return null
-  const now = new Date()
   if (props.wedding.akad_date && props.wedding.akad_time) {
     const dt = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`)
-    if (!isNaN(dt.getTime()) && dt > now) return { timestamp: dt.getTime() }
+    if (!isNaN(dt.getTime())) return { timestamp: dt.getTime() }
   }
   return null
 })
+
+const getEventIcon = () => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[eventType.value] || '💍')
+const getFloatingEmoji = () => ({ wedding: '🌸', sunatan: '⭐', aqiqah: '🍼', syukuran: '🏡' }[eventType.value] || '🌸')
+const getCoverTitle = () => ({ wedding: 'The Wedding Of', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Acara')
+const getCoverIcon = () => ({ wedding: '💐', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏠' }[eventType.value] || '💐')
+const getEventLabel = () => ({ wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Pernikahan')
+const getTitle = () => {
+  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}`
+  return props.wedding.nama_pria || '...'
+}
+const getTitleText = () => {
+  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'} & ${props.wedding.nama_wanita || '...'}`
+  return props.wedding.nama_pria || '...'
+}
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
 const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
 const formatMessageTime = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
 
-const updateCountdown = () => {
-  if (!countdownTarget.value) return
-  const diff = countdownTarget.value.timestamp - Date.now()
-  if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = countdown.seconds = 0; return }
-  countdown.days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  countdown.hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  countdown.minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  countdown.seconds = Math.floor((diff % (1000 * 60)) / 1000)
-}
+const updateCountdown = () => { if (!countdownTarget.value) return; const diff = countdownTarget.value.timestamp - Date.now(); if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = countdown.seconds = 0; return } countdown.days = Math.floor(diff / 86400000); countdown.hours = Math.floor((diff % 86400000) / 3600000); countdown.minutes = Math.floor((diff % 3600000) / 60000); countdown.seconds = Math.floor((diff % 60000) / 1000) }
 
-const openEnvelope = async () => {
-  isTearing.value = true
-  setTimeout(() => { isOpen.value = true; confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } }) }, 400)
-  await nextTick(); AOS.refresh()
-  if (bgMusic.value) { try { await bgMusic.value.play(); isPlaying.value = true } catch {} }
-}
+const openEnvelope = async () => { isTearing.value = true; setTimeout(() => { isOpen.value = true; confetti({ particleCount: 200, spread: 100 }) }, 400); await nextTick(); AOS.refresh(); if (bgMusic.value) { try { await bgMusic.value.play(); isPlaying.value = true } catch {} } }
 const toggleMusic = () => { if (!bgMusic.value) return; isPlaying.value ? bgMusic.value.pause() : bgMusic.value.play(); isPlaying.value = !isPlaying.value }
 const openMaps = (loc) => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank')
 const openLightbox = (i) => { lightboxIndex.value = i; lightboxOpen.value = true }
-const copyRekening = async () => { try { await navigator.clipboard.writeText(props.wedding.rekening); isShaking.value = true; setTimeout(() => isShaking.value = false, 500); showSuccess('Rekening disalin!') } catch { showError(null, 'Gagal') } }
+const copyRekening = async () => { try { await navigator.clipboard.writeText(props.wedding.rekening); isShaking.value = true; setTimeout(() => isShaking.value = false, 500); showSuccess('Disalin!') } catch { showError(null, 'Gagal') } }
 
 const loadMessages = async () => { const { data } = await supabase.from('messages').select('*').eq('wedding_id', props.wedding.id).order('created_at', { ascending: false }).limit(30); messages.value = data || [] }
 const loadGifts = async () => { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id); gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false })) }
@@ -259,14 +222,11 @@ const sendMessage = async () => { if (!newMessage.nama || !newMessage.pesan) ret
 const submitRsvp = async () => { if (!props.guestSlug) return showError(null, 'Link tidak valid'); submitting.value = true; try { await supabase.from('guests').update({ status_hadir: rsvpStatus.value, jumlah_orang: rsvpStatus.value ? jumlahOrang.value : 0 }).eq('unique_slug', props.guestSlug); showSuccess('Terima kasih!'); if (rsvpStatus.value) { showHearts.value = true; setTimeout(() => showHearts.value = false, 2500) } } catch { showError(null, 'Gagal') } finally { submitting.value = false } }
 const claimGift = async (gift) => { if (!gift.resiInput) return showError(null, 'Masukkan resi'); gift.claiming = true; try { const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single(); await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id); gift.status = true; gift.buyer_name = props.guestName; gift.resi = gift.resiInput; showSuccess('Diklaim!') } catch { showError(null, 'Gagal') } finally { gift.claiming = false } }
 
-onMounted(async () => { await loadMessages(); await loadGifts(); updateMetaTags({ title: `${getTitle()} - ${getEventLabel()}`, description: `Undangan ${getEventLabel()} ${getTitle()}`, image: props.theme.gallery?.[0] || '/og-image.jpg' }); AOS.init({ once: false, offset: 50 }); updateCountdown(); countdownInterval = setInterval(updateCountdown, 1000) })
+onMounted(async () => { await loadMessages(); await loadGifts(); updateMetaTags({ title: `${getTitleText()} - ${getEventLabel()}`, image: props.theme.gallery?.[0] || '/og-image.jpg' }); AOS.init({ once: false, offset: 50 }); updateCountdown(); countdownInterval = setInterval(updateCountdown, 1000) })
 onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 </script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
-</style>
-
+<style>@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');</style>
 <style scoped>
 .template-elegan { position: relative; min-height: 100vh; overflow-x: hidden; }
 .parallax-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: -1; }
@@ -276,17 +236,17 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .floating-leaf-2 { font-size: 18px; top: calc(60% + sin(var(--pos)) * 20%); }
 @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-50px) rotate(15deg); } }
 .cover-page { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(25px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.cover-content { text-align: center; max-width: 480px; padding: 40px 30px; background: white; border-radius: 80px 20px 80px 20px; box-shadow: 0 40px 80px rgba(0,0,0,0.08); border: 1px solid rgba(155,135,245,0.2); }
+.cover-content { text-align: center; max-width: 480px; padding: 40px 30px; background: white; border-radius: 80px 20px 80px 20px; box-shadow: 0 40px 80px rgba(0,0,0,0.08); }
 .cover-decoration { font-size: 50px; margin-bottom: 15px; }
 .cover-subtitle { font-size: 14px; letter-spacing: 6px; opacity: 0.6; text-transform: uppercase; }
-.cover-title { font-size: 48px; margin: 25px 0; font-family: 'Playfair Display', serif; line-height: 1.2; color: #2c3e50; }
+.cover-title { font-size: 42px; margin: 25px 0; font-family: 'Playfair Display', serif; line-height: 1.2; color: #2c3e50; }
 .cover-date { font-size: 18px; margin-bottom: 35px; opacity: 0.8; }
-.guest-welcome { margin: 35px 0 25px; font-size: 16px; line-height: 1.8; }
+.guest-welcome { margin: 35px 0 25px; font-size: 16px; }
 .guest-welcome strong { font-size: 26px; display: block; margin-top: 10px; font-family: 'Playfair Display', serif; color: #9b87f5; }
-.btn-open { background: linear-gradient(135deg, #9b87f5, #7e69e0); color: white; border: none; padding: 18px 60px; border-radius: 60px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 20px 40px rgba(155,135,245,0.3); margin-top: 20px; }
-.cover-music { position: fixed; bottom: 30px; right: 30px; background: white; border: none; font-size: 24px; padding: 18px; border-radius: 50%; box-shadow: 0 15px 30px rgba(0,0,0,0.1); cursor: pointer; z-index: 101; }
+.btn-open { background: linear-gradient(135deg, #9b87f5, #7e69e0); color: white; border: none; padding: 18px 60px; border-radius: 60px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+.cover-music { position: fixed; bottom: 30px; right: 30px; background: white; border: none; font-size: 24px; padding: 18px; border-radius: 50%; cursor: pointer; z-index: 101; }
 .main-content { min-height: 100vh; padding: 15px; display: flex; justify-content: center; padding-bottom: 60px; }
-.content-card { max-width: 550px; width: 100%; background: rgba(255,255,255,0.92); backdrop-filter: blur(30px); border-radius: 50px 20px 50px 20px; padding: 35px 25px; box-shadow: 0 30px 60px rgba(0,0,0,0.1); margin: 15px 0; border: 1px solid rgba(255,255,255,0.9); }
+.content-card { max-width: 550px; width: 100%; background: rgba(255,255,255,0.92); backdrop-filter: blur(30px); border-radius: 50px 20px 50px 20px; padding: 35px 25px; box-shadow: 0 30px 60px rgba(0,0,0,0.1); margin: 15px 0; }
 .top-actions { text-align: right; margin-bottom: 15px; }
 .icon-btn { background: rgba(255,255,255,0.8); border: none; font-size: 22px; padding: 12px; border-radius: 50%; cursor: pointer; }
 .hero-section { position: relative; margin-bottom: 40px; border-radius: 30px; overflow: hidden; }
@@ -294,29 +254,21 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)); }
 .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 25px; color: white; text-align: center; }
 .hero-content .bismillah { font-size: 40px; margin-bottom: 15px; opacity: 0.9; }
-.hero-text { font-size: 14px; line-height: 1.8; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.hero-text { font-size: 14px; line-height: 1.8; }
 .section-title { font-size: 22px; margin-bottom: 25px; color: #2c3e50; font-weight: 600; text-align: center; }
 .section-title::after { content: ''; display: block; width: 50px; height: 3px; background: #9b87f5; margin: 15px auto 0; border-radius: 3px; }
 .section-names { text-align: center; margin: 40px 0; }
-.names-container { display: flex; flex-direction: column; align-items: center; }
 .wedding-title { font-size: 42px; font-family: 'Playfair Display', serif; margin: 5px 0; color: #2c3e50; }
 .parents-name { font-size: 15px; opacity: 0.8; margin-top: 20px; line-height: 1.8; }
-.section-quote { margin: 40px 0; }
-.quote-box { background: linear-gradient(135deg, rgba(155,135,245,0.03), rgba(155,135,245,0.08)); padding: 30px 25px; border-radius: 30px; border: 1px solid rgba(155,135,245,0.15); }
-.arabic { font-size: 22px; line-height: 2.2; margin-bottom: 20px; font-family: 'Traditional Arabic', serif; text-align: right; }
-.translation { font-size: 15px; line-height: 1.9; font-style: italic; }
-.reference { margin-top: 20px; font-size: 14px; opacity: 0.7; }
 .section-countdown { margin: 50px 0; text-align: center; }
 .countdown-container { padding: 20px; background: linear-gradient(135deg, rgba(155,135,245,0.05), rgba(155,135,245,0.12)); border-radius: 30px; }
 .countdown-grid { display: flex; justify-content: center; gap: 15px; }
 .countdown-item { background: white; padding: 15px 10px; border-radius: 20px; min-width: 70px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
 .countdown-value { display: block; font-size: 32px; font-weight: 700; color: #9b87f5; }
 .countdown-label { display: block; font-size: 12px; opacity: 0.7; margin-top: 5px; }
-.countdown-target-label { margin-top: 20px; font-size: 16px; font-weight: 600; color: #2c3e50; }
+.countdown-target-label { margin-top: 20px; font-size: 16px; font-weight: 600; }
 .section-guest { text-align: center; margin: 50px 0; }
-.guest-intro { font-size: 14px; opacity: 0.7; }
 .guest-name-display { font-size: 32px; font-weight: 700; margin: 15px 0; font-family: 'Playfair Display', serif; color: #9b87f5; }
-.guest-message { font-size: 15px; line-height: 1.8; }
 .section-event { margin: 40px 0; }
 .event-card { background: white; padding: 25px; border-radius: 25px; margin-bottom: 20px; box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
 .event-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
@@ -337,7 +289,7 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .gift-card { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
 .gift-card-image img { width: 100%; height: 200px; object-fit: cover; }
 .gift-card-content { padding: 20px; }
-.gift-price { font-size: 20px; font-weight: 700; color: #9b87f5; margin-bottom: 15px; }
+.gift-price { font-size: 20px; font-weight: 700; color: #9b87f5; }
 .btn-buy { display: inline-block; background: linear-gradient(135deg, #9b87f5, #7e69e0); color: white; padding: 14px 25px; border-radius: 50px; text-decoration: none; font-weight: 600; }
 .resi-form { display: flex; gap: 10px; padding: 15px; background: #f9f9f9; }
 .resi-form input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 10px; }
@@ -346,15 +298,13 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .section-gift { margin: 50px 0; }
 .rekening-item { background: #f8f9fa; padding: 20px; border-radius: 20px; display: flex; align-items: center; gap: 15px; }
 .rekening-item pre { flex: 1; margin: 0; font-family: monospace; white-space: pre-wrap; font-size: 14px; }
-.rekening-item button { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 40px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.rekening-item button { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 40px; cursor: pointer; }
 .rekening-item button.shaking { animation: shake 0.5s; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .section-rsvp { margin: 50px 0; text-align: center; }
 .rsvp-buttons { display: flex; gap: 15px; margin: 25px 0; }
 .rsvp-buttons button { flex: 1; padding: 18px; border: 2px solid #ddd; background: white; border-radius: 60px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; }
 .rsvp-buttons button.active { background: #9b87f5; color: white; border-color: #9b87f5; }
-.rsvp-guest-count { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 20px 0; }
-.rsvp-guest-count input { width: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 10px; text-align: center; font-size: 16px; }
 .btn-rsvp { background: #9b87f5; color: white; border: none; padding: 18px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; }
 .floating-hearts { position: relative; height: 50px; }
 .heart { position: absolute; bottom: 0; left: 50%; font-size: 24px; animation: flyUp 2.5s ease-out forwards; animation-delay: calc(var(--i) * 0.1s); opacity: 0; }
@@ -366,7 +316,6 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .message-form input, .message-form textarea { width: 100%; padding: 16px; border: 2px solid #eee; border-radius: 20px; margin-bottom: 15px; background: white; font-size: 15px; }
 .message-form button { background: #9b87f5; color: white; border: none; padding: 16px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .section-closing { text-align: center; margin-top: 60px; }
-.closing-decoration { font-size: 30px; margin-bottom: 20px; }
 .closing-text { font-size: 15px; line-height: 2; margin-bottom: 25px; }
 .closing-signature { font-size: 18px; font-weight: 600; margin-bottom: 30px; }
 .virtual-signature { font-family: 'Dancing Script', cursive; font-size: 28px; margin: 25px 0; }
@@ -374,5 +323,5 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .lightbox img { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 20px; }
 .close-lightbox { position: absolute; top: 30px; right: 30px; background: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; }
-@media (max-width: 480px) { .content-card { padding: 20px 15px; } .wedding-title { font-size: 28px; } .guest-name-display { font-size: 24px; } .countdown-item { min-width: 60px; padding: 10px 5px; } .countdown-value { font-size: 24px; } .cover-title { font-size: 36px; } }
+@media (max-width: 480px) { .content-card { padding: 20px 15px; } .wedding-title { font-size: 28px; } .cover-title { font-size: 32px; } }
 </style>
