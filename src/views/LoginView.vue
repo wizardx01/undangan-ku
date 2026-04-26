@@ -85,12 +85,6 @@
         
         <p v-if="generalError" class="error-message">{{ generalError }}</p>
       </form>
-      
-      <p class="demo-hint">
-        💡 Demo: admin@undanganku.com / admin123<br>
-        💡 Demo: user@example.com / user123
-      </p>
-      
       <p class="back-home"><a href="/">← Kembali ke Beranda</a></p>
     </div>
   </div>

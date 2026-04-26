@@ -7,6 +7,7 @@
       <span v-for="i in 10" :key="'leaf-'+i" class="floating-leaf-2" :style="{ '--delay': i * 0.6 + 's', '--pos': i * 9 + '%' }">🍃</span>
     </div>
 
+    <!-- COVER -->
     <div v-if="!isOpen" class="cover-page" :style="coverStyle">
       <div class="cover-content" :class="{ 'tearing': isTearing }">
         <div class="cover-frame">
@@ -21,21 +22,25 @@
       </div>
     </div>
 
+    <!-- ISI UNDANGAN -->
     <div v-else class="main-content">
       <div class="content-card">
         <div class="top-actions"><button class="icon-btn" @click="toggleMusic"><span>{{ isPlaying ? '🔊' : '🔈' }}</span></button></div>
 
+        <!-- HERO -->
         <div class="hero-section" data-aos="fade-up">
           <div class="hero-image" v-if="props.theme.gallery && props.theme.gallery.length"><img :src="props.theme.gallery[0]" alt="Couple" /><div class="hero-overlay"></div></div>
           <div class="hero-content"><div class="bismillah">﷽</div><p class="hero-text">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri {{ getEventLabel() }}:</p></div>
         </div>
 
+        <!-- NAMA -->
         <div class="section-names" data-aos="fade-up" data-aos-delay="100">
           <div class="names-container"><h1 class="wedding-title" v-html="getTitle()"></h1></div>
           <p class="parents-name" v-if="props.wedding.event_type === 'wedding'">Putra dari {{ props.wedding.orangtua_pria || '...' }}<br>&<br>Putri dari {{ props.wedding.orangtua_wanita || '...' }}</p>
           <p class="parents-name" v-else>{{ props.wedding.nama_wanita ? 'Putra dari ' + props.wedding.nama_wanita : '' }}</p>
         </div>
 
+        <!-- AYAT -->
         <div class="section-quote" data-aos="fade-up" data-aos-delay="200">
           <div class="quote-box">
             <p class="arabic">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً</p>
@@ -44,6 +49,7 @@
           </div>
         </div>
 
+        <!-- COUNTDOWN -->
         <div class="section-countdown" data-aos="fade-up" data-aos-delay="300">
           <h3 class="section-title">⏳ Menuju Hari Bahagia</h3>
           <div class="countdown-container" v-if="countdownTarget">
@@ -53,16 +59,17 @@
               <div class="countdown-item"><span class="countdown-value">{{ countdown.minutes }}</span><span class="countdown-label">Menit</span></div>
               <div class="countdown-item"><span class="countdown-value">{{ countdown.seconds }}</span><span class="countdown-label">Detik</span></div>
             </div>
-            <p class="countdown-target-label">Menuju {{ getEventLabel() }}</p>
           </div>
         </div>
 
+        <!-- NAMA TAMU -->
         <div class="section-guest" data-aos="fade-up" data-aos-delay="400">
           <p class="guest-intro">Yang terhormat</p>
           <p class="guest-name-display">{{ displayGuestName }}</p>
           <p class="guest-message">Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu</p>
         </div>
 
+        <!-- DETAIL ACARA -->
         <div class="section-event" data-aos="fade-up" data-aos-delay="500">
           <h3 class="section-title">📅 Acara</h3>
           <div class="event-card">
@@ -73,17 +80,42 @@
               <p><span>📍</span> {{ props.wedding.akad_location }}</p>
             </div>
             <button class="btn-map-small" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button>
-          </div>
-          <div class="event-card" v-if="props.wedding.event_type === 'wedding' && props.wedding.resepsi_date">
-            <div class="event-header"><div class="event-icon">🎉</div><h4>Resepsi</h4></div>
-            <div class="event-details">
-              <p><span>📆</span> {{ formatDate(props.wedding.resepsi_date) }}</p>
-              <p><span>🕐</span> {{ formatTime(props.wedding.resepsi_time) }}</p>
-              <p><span>📍</span> {{ props.wedding.resepsi_location || props.wedding.akad_location }}</p>
+            
+            <!-- SAVE TO CALENDAR -->
+            <div class="calendar-section" v-if="props.wedding.akad_date">
+              <add-to-calendar-button
+                :name="getTitleText() + ' - ' + getEventLabel()"
+                :description="'Acara ' + getEventLabel() + ' di ' + props.wedding.akad_location"
+                :startDate="formatCalendarDate(props.wedding.akad_date)"
+                :startTime="props.wedding.akad_time?.substring(0,5)"
+                :endTime="props.wedding.resepsi_time?.substring(0,5) || '23:59'"
+                :location="props.wedding.akad_location"
+                options="'Google','Apple','Outlook.com'"
+                timeZone="Asia/Jakarta"
+                language="id"
+                buttonsList
+                hideTextLabelButton
+              ></add-to-calendar-button>
             </div>
           </div>
         </div>
 
+        <!-- KISAH CINTA -->
+        <div class="section-love-story" v-if="props.wedding.love_story && props.wedding.love_story.length > 0" data-aos="fade-up" data-aos-delay="550">
+          <h3 class="section-title">💕 Kisah Cinta Kami</h3>
+          <div class="timeline">
+            <div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item">
+              <div class="timeline-icon">{{ story.icon || '💕' }}</div>
+              <div class="timeline-content">
+                <h4>{{ story.title }}</h4>
+                <p class="timeline-date">{{ story.date }}</p>
+                <p>{{ story.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GALLERY -->
         <div class="section-gallery" data-aos="fade-up" data-aos-delay="600" v-if="props.theme.gallery && props.theme.gallery.length">
           <h3 class="section-title">📸 Galeri Kenangan</h3>
           <swiper :modules="modules" :slides-per-view="1" :space-between="15" :pagination="{ clickable: true }" :autoplay="{ delay: 3000 }" loop class="gallery-swiper">
@@ -91,13 +123,7 @@
           </swiper>
         </div>
 
-        <div class="section-wishes" data-aos="fade-up" data-aos-delay="700">
-          <div class="wishes-box"><div class="wishes-icon">💕</div>
-            <p class="wishes-text">"Semoga Allah memberkahi acara ini, menjadikannya penuh kebahagiaan dan keberkahan."</p>
-            <p class="wishes-signature">— {{ getTitleText() }}</p>
-          </div>
-        </div>
-
+        <!-- GIFT REGISTRY -->
         <div class="section-gifts" data-aos="fade-up" data-aos-delay="800" v-if="gifts.length > 0">
           <h3 class="section-title">🎁 Kirim Kado</h3>
           <div class="gift-grid">
@@ -113,11 +139,13 @@
           </div>
         </div>
 
+        <!-- AMPLOP DIGITAL -->
         <div class="section-gift" data-aos="fade-up" data-aos-delay="900" v-if="props.wedding.rekening">
           <h3 class="section-title">💝 Amplop Digital</h3>
           <div class="rekening-list"><div class="rekening-item"><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening" :class="{ shaking: isShaking }"><span>📋</span> Salin</button></div></div>
         </div>
 
+        <!-- RSVP -->
         <div class="section-rsvp" data-aos="fade-up" data-aos-delay="1000">
           <h3 class="section-title">📝 Konfirmasi Kehadiran</h3>
           <div class="rsvp-buttons">
@@ -129,12 +157,22 @@
           <div class="floating-hearts" v-if="showHearts"><span v-for="i in 15" :key="i" class="heart" :style="{ '--i': i }">❤️</span></div>
         </div>
 
+        <!-- PESAN & DOA -->
         <div class="section-messages" data-aos="fade-up" data-aos-delay="1100">
           <h3 class="section-title">💬 Ucapan & Doa</h3>
           <div class="message-list"><div v-for="msg in messages" :key="msg.id" class="message-item"><div class="message-header"><strong>{{ msg.nama_pengirim }}</strong><small>{{ formatMessageTime(msg.created_at) }}</small></div><p>{{ msg.pesan }}</p></div><div v-if="messages.length === 0" class="message-empty">💭 Belum ada ucapan.</div></div>
           <div class="message-form"><input v-model="newMessage.nama" placeholder="Nama Anda" /><textarea v-model="newMessage.pesan" placeholder="Tulis doa atau ucapan..." rows="3"></textarea><button @click="sendMessage" :disabled="sendingMessage"><span>📨</span> Kirim Doa</button></div>
         </div>
 
+        <!-- IG STORY TEMPLATE -->
+        <IGStoryTemplate 
+          :wedding-name="getTitleText()" 
+          :akad-date="props.wedding.akad_date"
+          :event-type="eventType"
+          :image-url="props.theme.gallery?.[0]"
+        />
+
+        <!-- CLOSING -->
         <div class="section-closing" data-aos="fade-up" data-aos-delay="1200">
           <div class="closing-decoration">✨</div>
           <p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu.</p>
@@ -162,6 +200,8 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import { updateMetaTags } from '../../utils/seo'
 import { showError, showSuccess } from '../../utils/errorHandler'
+import 'add-to-calendar-button'
+import IGStoryTemplate from '../../components/IGStoryTemplate.vue'
 
 const modules = [Pagination, Autoplay]
 const props = defineProps({ wedding: Object, theme: Object, guestName: String, guestSlug: String })
@@ -199,14 +239,15 @@ const getTitle = () => {
   return props.wedding.nama_pria || '...'
 }
 const getTitleText = () => {
-  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'} & ${props.wedding.nama_wanita || '...'}`
-  return props.wedding.nama_pria || '...'
+  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || ''} & ${props.wedding.nama_wanita || ''}`
+  return props.wedding.nama_pria || ''
 }
 
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
 const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
 const formatMessageTime = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
+const formatCalendarDate = (d) => d ? d.replace(/-/g, '') : ''
 
 const updateCountdown = () => { if (!countdownTarget.value) return; const diff = countdownTarget.value.timestamp - Date.now(); if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = countdown.seconds = 0; return } countdown.days = Math.floor(diff / 86400000); countdown.hours = Math.floor((diff % 86400000) / 3600000); countdown.minutes = Math.floor((diff % 3600000) / 60000); countdown.seconds = Math.floor((diff % 60000) / 1000) }
 
@@ -266,7 +307,6 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .countdown-item { background: white; padding: 15px 10px; border-radius: 20px; min-width: 70px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
 .countdown-value { display: block; font-size: 32px; font-weight: 700; color: #9b87f5; }
 .countdown-label { display: block; font-size: 12px; opacity: 0.7; margin-top: 5px; }
-.countdown-target-label { margin-top: 20px; font-size: 16px; font-weight: 600; }
 .section-guest { text-align: center; margin: 50px 0; }
 .guest-name-display { font-size: 32px; font-weight: 700; margin: 15px 0; font-family: 'Playfair Display', serif; color: #9b87f5; }
 .section-event { margin: 40px 0; }
@@ -276,14 +316,22 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .event-card h4 { font-size: 20px; color: #2c3e50; }
 .event-details p { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .btn-map-small { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 50px; margin-top: 15px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
+
+/* CALENDAR */
+.calendar-section { margin-top: 20px; text-align: center; }
+
+/* LOVE STORY */
+.section-love-story { margin: 40px 0; }
+.timeline { position: relative; padding-left: 30px; border-left: 2px solid #e0e0e0; }
+.timeline-item { display: flex; gap: 15px; margin-bottom: 25px; position: relative; }
+.timeline-icon { width: 40px; height: 40px; background: #9b87f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; position: absolute; left: -51px; color: white; }
+.timeline-content { flex: 1; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+.timeline-content h4 { margin-bottom: 5px; }
+.timeline-date { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+
 .section-gallery { margin: 50px 0; }
 .gallery-swiper { border-radius: 30px; }
 .gallery-slide img { width: 100%; height: 350px; object-fit: cover; cursor: pointer; border-radius: 25px; }
-.section-wishes { margin: 50px 0; }
-.wishes-box { background: linear-gradient(135deg, #fdfbf7, #f5f0eb); padding: 35px 25px; border-radius: 40px; text-align: center; }
-.wishes-icon { font-size: 40px; margin-bottom: 20px; }
-.wishes-text { font-size: 16px; line-height: 2; font-style: italic; }
-.wishes-signature { margin-top: 25px; font-weight: 600; font-size: 18px; }
 .section-gifts { margin: 50px 0; }
 .gift-grid { display: grid; gap: 20px; }
 .gift-card { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
@@ -299,8 +347,6 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .rekening-item { background: #f8f9fa; padding: 20px; border-radius: 20px; display: flex; align-items: center; gap: 15px; }
 .rekening-item pre { flex: 1; margin: 0; font-family: monospace; white-space: pre-wrap; font-size: 14px; }
 .rekening-item button { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 40px; cursor: pointer; }
-.rekening-item button.shaking { animation: shake 0.5s; }
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .section-rsvp { margin: 50px 0; text-align: center; }
 .rsvp-buttons { display: flex; gap: 15px; margin: 25px 0; }
 .rsvp-buttons button { flex: 1; padding: 18px; border: 2px solid #ddd; background: white; border-radius: 60px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; }

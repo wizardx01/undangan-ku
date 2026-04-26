@@ -23,6 +23,13 @@
       :guestSlug="guestSlug"
     />
   </div>
+
+    <!-- QR CODE CHECK-IN -->
+  <div class="qr-section" v-if="wedding.slug" data-aos="fade-up" data-aos-delay="1300">
+    <h4>📱 QR Code Check-in</h4>
+    <canvas ref="qrCanvas"></canvas>
+    <p>Scan QR ini untuk check-in kehadiran</p>
+  </div>
 </template>
 
 <script setup>
@@ -32,6 +39,9 @@ import { supabase } from '../lib/supabase'
 import TemplateElegan from './templates/TemplateElegan.vue'
 import TemplateMinimalis from './templates/TemplateMinimalis.vue'
 import TemplateFloral from './templates/TemplateFloral.vue'
+import QRCode from 'qrcode'
+
+const qrCanvas = ref(null)
 
 const route = useRoute()
 const slug = route.params.slug
@@ -85,6 +95,17 @@ const loadWedding = async () => {
   }
 }
 
+const generateQR = async () => {
+  if (!qrCanvas.value || !wedding.value?.slug) return
+  const url = `${window.location.origin}/wedding/${wedding.value.slug}`
+  try {
+    await QRCode.toCanvas(qrCanvas.value, url, { width: 180, margin: 2, color: { dark: '#000000', light: '#ffffff' } })
+  } catch (err) { console.error('QR error:', err) }
+}
+
+// Di onMounted:
+setTimeout(generateQR, 500)
+
 onMounted(() => loadWedding())
 </script>
 
@@ -117,4 +138,9 @@ onMounted(() => loadWedding())
   border-radius: 50px;
   cursor: pointer;
 }
+
+.qr-section { text-align: center; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 20px; }
+.qr-section h4 { margin-bottom: 15px; }
+.qr-section canvas { border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.qr-section p { margin-top: 10px; font-size: 13px; color: #666; }
 </style>

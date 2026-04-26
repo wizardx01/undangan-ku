@@ -25,6 +25,7 @@
       </div>
 
       <form @submit.prevent="saveWedding">
+        <!-- DATA DASAR -->
         <div class="section"><h3>📋 {{ getEventDataLabel() }}</h3>
           <template v-if="form.event_type === 'wedding'">
             <label>Nama Mempelai Pria *</label><input v-model="form.nama_pria" placeholder="Budi Santoso" />
@@ -40,14 +41,19 @@
           </template>
         </div>
 
+        <!-- ORANG TUA -->
         <div class="section" v-if="form.event_type === 'wedding'"><h3>👨‍👩‍👧 Orang Tua</h3><label>Orang Tua Pria</label><input v-model="form.orangtua_pria" /><label>Orang Tua Wanita</label><input v-model="form.orangtua_wanita" /></div>
 
+        <!-- TANGGAL -->
         <div class="section"><h3>📅 Tanggal Acara</h3><div class="form-row"><input type="date" v-model="form.akad_date" /><input type="time" v-model="form.akad_time" /></div><label>Lokasi *</label><textarea v-model="form.akad_location" rows="2"></textarea></div>
 
+        <!-- RESEPSI -->
         <div class="section" v-if="form.event_type === 'wedding'"><h3>🎉 Resepsi</h3><div class="form-row"><input type="date" v-model="form.resepsi_date" /><input type="time" v-model="form.resepsi_time" /></div><label>Lokasi</label><textarea v-model="form.resepsi_location" rows="2"></textarea></div>
 
+        <!-- REKENING -->
         <div class="section"><h3>💳 Rekening</h3><textarea v-model="form.rekening" rows="3" placeholder="BCA: 123456789 a/n Budi"></textarea></div>
 
+        <!-- TEMPLATE -->
         <div class="section"><h3>🎨 Template</h3>
           <div class="template-selector">
             <div class="template-option" :class="{ active: form.template === 'elegan' }" @click="form.template = 'elegan'"><div class="template-preview elegan">💐</div><label>Elegan</label></div>
@@ -56,18 +62,56 @@
           </div>
         </div>
 
+        <!-- KUSTOMISASI -->
         <div class="section"><h3>🎨 Kustomisasi</h3><label>Warna</label><div class="color-row"><input type="color" v-model="form.theme.primary_color" /></div><label>Font</label><select v-model="form.theme.font_family"><option>Poppins, sans-serif</option><option>'Playfair Display', serif</option><option>'Dancing Script', cursive</option></select><label>Background</label><select v-model="form.theme.background_type" @change="handleBgChange"><option value="solid">Warna</option><option value="image">Gambar</option></select><div v-if="form.theme.background_type === 'solid'"><input type="color" v-model="form.theme.background_value" /></div><div v-if="form.theme.background_type === 'image'"><input type="file" @change="uploadBackground" accept="image/*" /><img v-if="form.theme.background_value" :src="form.theme.background_value" class="preview-bg" /></div></div>
 
+        <!-- GALERI -->
         <div class="section"><h3>🖼️ Galeri</h3><input type="file" @change="uploadGallery" accept="image/*" multiple /><div v-if="uploadingGallery" class="loading-inline">⏳ {{ uploadProgress }}</div><div class="gallery-preview"><div v-for="(img, idx) in form.gallery" :key="idx" class="gallery-item"><img :src="img" /><button @click="removeImage(idx)">✕</button></div></div></div>
 
+        <!-- MUSIK -->
         <div class="section"><h3>🎵 Musik</h3><input type="file" @change="uploadMusic" accept="audio/*" /><div v-if="uploadingMusic" class="loading-inline">⏳ Upload...</div><label>Atau URL</label><input v-model="form.theme.music_url" placeholder="https://..." /></div>
 
+        <!-- KISAH CINTA (LOVE STORY) -->
+        <div class="section">
+          <h3>💕 Kisah Cinta (Opsional)</h3>
+          <p class="section-desc">Ceritakan perjalanan cinta Anda. Tamu akan melihat timeline ini di undangan.</p>
+          <div class="love-story-form">
+            <div v-for="(story, idx) in form.love_story" :key="idx" class="story-item">
+              <div class="story-item-header">
+                <span class="story-number">#{{ idx + 1 }}</span>
+                <button type="button" @click="removeLoveStory(idx)" class="btn-del-sm">🗑️</button>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Judul</label><input v-model="story.title" placeholder="Pertama Bertemu" /></div>
+                <div class="form-group"><label>Tanggal</label><input v-model="story.date" placeholder="25 Desember 2020" /></div>
+              </div>
+              <div class="form-group"><label>Deskripsi Singkat</label><textarea v-model="story.description" rows="2" placeholder="Cerita singkat momen ini..."></textarea></div>
+              <div class="form-group"><label>Icon</label>
+                <select v-model="story.icon">
+                  <option value="💕">💕 Jatuh Cinta</option>
+                  <option value="💍">💍 Lamaran</option>
+                  <option value="👀">👀 Pertama Bertemu</option>
+                  <option value="💌">💌 Chat Pertama</option>
+                  <option value="🎉">🎉 Anniversary</option>
+                  <option value="💒">💒 Menikah</option>
+                  <option value="👶">👶 Kelahiran</option>
+                </select>
+              </div>
+            </div>
+            <button type="button" @click="addLoveStory" class="btn-add-story">➕ Tambah Cerita Cinta</button>
+          </div>
+        </div>
+
+        <!-- TOMBOL -->
         <div class="action-buttons"><button type="submit" class="btn-primary" :disabled="saving">{{ saving ? '⏳' : '💾' }} {{ currentWeddingId ? 'Update' : 'Simpan' }}</button><button type="button" class="btn-secondary" @click="resetForm">🔄 Reset</button></div>
 
+        <!-- LINK -->
         <div v-if="savedSlug" class="result-link"><h3>✅ Link Undangan</h3><div class="link-box"><code>{{ baseUrl }}/wedding/{{ savedSlug }}</code><button @click="copyMainLink">📋</button></div><button @click="previewWedding" class="preview-btn">👁️ Preview</button></div>
 
+        <!-- GIFT MONITOR -->
         <div v-if="savedSlug && giftList.length > 0" class="gift-summary-box"><div class="gift-summary-header"><h3>🎁 Monitor Kado</h3><button @click="loadGiftList" class="btn-refresh" :disabled="loadingGifts">🔄</button></div><div class="gift-summary-stats"><div class="stat-item"><span class="stat-value">{{ giftList.length }}</span><span class="stat-label">Total</span></div><div class="stat-item"><span class="stat-value highlight">{{ purchasedGiftsCount }}</span><span class="stat-label">Dibeli</span></div><div class="stat-item"><span class="stat-value">{{ availableGiftsCount }}</span><span class="stat-label">Tersedia</span></div></div><div v-if="recentlyPurchasedGifts.length > 0" class="recent-purchases"><h4>🆕 Pembelian Terbaru</h4><div v-for="gift in recentlyPurchasedGifts.slice(0, 3)" :key="gift.id" class="recent-item"><span>✅ {{ gift.name }}</span><span>oleh {{ gift.buyer_name }}</span><span v-if="gift.resi">📦 {{ gift.resi }}</span></div></div></div>
 
+        <!-- TAMU -->
         <div class="section" v-if="savedSlug"><h3>👥 Tamu ({{ guestList.length }}/{{ planLimits.maxGuests === Infinity ? '∞' : planLimits.maxGuests }})</h3>
           <div class="guest-form-box" v-if="canAddMoreGuests"><div class="form-row"><input v-model="newGuest.name" placeholder="Nama Tamu *" @keyup.enter="addGuest" /><input v-model="newGuest.nickname" placeholder="Panggilan" style="max-width:130px" /></div><div class="form-row"><select v-model="newGuest.category"><option>Keluarga</option><option>Teman</option><option>Kolega</option><option>VIP</option></select><input type="number" v-model="newGuest.seats" min="1" max="10" placeholder="Kursi" style="max-width:80px" /></div><button @click="addGuest" class="btn-add-guest">➕ Tambah</button></div>
           <div v-else class="limit-reached"><p>❌ Limit tamu! ({{ guestList.length }}/{{ planLimits.maxGuests }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade Premium</button></div>
@@ -76,6 +120,7 @@
           <div v-if="guestList.length > 0" class="guest-list-full"><div v-for="guest in filteredGuestList" :key="guest.id" class="guest-item-full"><div><span class="guest-name">{{ guest.name }}</span><span class="guest-category" :class="guest.category">{{ guest.category }}</span></div><div class="guest-link-box"><code>{{ baseUrl }}/wedding/{{ savedSlug }}?to={{ guest.slug }}</code><button @click="copyGuestLink(guest.slug)" class="btn-icon-sm">📋</button><button @click="shareWA(guest)" class="btn-icon-sm btn-wa">💬</button><button @click="deleteGuest(guest.id)" class="btn-icon-sm btn-del">🗑️</button></div></div></div>
         </div>
 
+        <!-- KADO -->
         <div class="section" v-if="savedSlug"><h3>🎁 Kado ({{ giftList.length }}/{{ planLimits.maxGifts === Infinity ? '∞' : planLimits.maxGifts }})</h3>
           <div class="gift-form-box" v-if="canAddMoreGifts"><input v-model="newGift.name" placeholder="Nama Barang *" /><input v-model="newGift.price" type="number" placeholder="Harga (Rp)" /><input v-model="newGift.link" placeholder="Link" /><button @click="addGift" class="btn-add-guest">➕ Tambah</button></div>
           <div v-else class="limit-reached"><p>❌ Limit kado! ({{ giftList.length }}/{{ planLimits.maxGifts }})</p><button @click="upgradePlan" class="btn-upgrade">⬆️ Upgrade Premium</button></div>
@@ -125,7 +170,8 @@ const form = reactive({
   resepsi_date: '', resepsi_time: '', resepsi_location: '', orangtua_pria: '', orangtua_wanita: '', rekening: '',
   event_type: 'wedding', template: 'elegan',
   theme: { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' },
-  gallery: []
+  gallery: [],
+  love_story: []
 })
 
 const saving = ref(false); const uploadingBg = ref(false); const uploadingGallery = ref(false)
@@ -170,56 +216,48 @@ const upgradePlan = () => {
 const handleBgChange = () => { form.theme.background_value = form.theme.background_type === 'solid' ? '#ffffff' : '' }
 const removeImage = (i) => form.gallery.splice(i, 1)
 
+// Love Story Functions
+const addLoveStory = () => { form.love_story.push({ title: '', date: '', description: '', icon: '💕' }) }
+const removeLoveStory = (idx) => { form.love_story.splice(idx, 1) }
+
 const uploadBackground = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 10*1024*1024) { showError(null, 'Max 10MB'); return }; uploadingBg.value = true; try { const c = await imageCompression(f, { maxSizeMB: 0.5, maxWidthOrHeight: 1200 }); const { data } = await supabase.storage.from('weddings').upload(`bg-${Date.now()}.${f.name.split('.').pop()}`, c); form.theme.background_value = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Uploaded!') } catch { showError(null, 'Gagal') } finally { uploadingBg.value = false; e.target.value = '' } }
 const uploadGallery = async (e) => { const files = Array.from(e.target.files); if (!files.length) return; uploadingGallery.value = true; let up = 0; try { for (const f of files) { uploadProgress.value = `${up}/${files.length}`; if (!f.type.startsWith('image/')) continue; if (f.size > 10*1024*1024) continue; const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 800 }); const { data } = await supabase.storage.from('weddings').upload(`gal-${Date.now()}-${Math.random().toString(36).slice(2)}.${f.name.split('.').pop()}`, c); form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl); up++ } if (up > 0) showSuccess(`${up} foto!`) } catch { showError(null, 'Gagal') } finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' } }
 const uploadMusic = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 20*1024*1024) { showError(null, 'Max 20MB'); return }; uploadingMusic.value = true; try { const { data } = await supabase.storage.from('weddings').upload(`mus-${Date.now()}.${f.name.split('.').pop()}`, f, { contentType: 'audio/mpeg' }); form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Musik!') } catch { showError(null, 'Gagal') } finally { uploadingMusic.value = false; e.target.value = '' } }
 
-// ========== SAVE WEDDING (FIXED ERROR HANDLING) ==========
 const saveWedding = async () => {
   if (!form.nama_pria || !form.akad_date || !form.akad_time || !form.akad_location) { showError(null, 'Isi data wajib!'); return }
-  
   saving.value = true
   try {
     if (currentWeddingId.value) {
-      // UPDATE
-      const { error } = await supabase.from('weddings').update({
+      await supabase.from('weddings').update({
         nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
         resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
         orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
-        event_type: form.event_type, template: form.template, theme_settings: { ...form.theme, gallery: form.gallery }
+        event_type: form.event_type, template: form.template, love_story: form.love_story,
+        theme_settings: { ...form.theme, gallery: form.gallery }
       }).eq('id', currentWeddingId.value)
-      if (error) throw error
       showSuccess('Diupdate!')
     } else {
-      // INSERT BARU
       const { allowed, message } = await canCreateWedding(supabase)
       if (!allowed) { alert(message); return }
-      
       const slug = `${(form.nama_pria || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`
-      const userId = user.value?.id || null
-      
-      const { data, error } = await supabase.from('weddings').insert([{ 
+      const { data } = await supabase.from('weddings').insert([{
         nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
         resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
         orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
-        event_type: form.event_type, template: form.template, slug: slug,
+        event_type: form.event_type, template: form.template, love_story: form.love_story, slug,
         theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true,
-        expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        user_id: userId
+        expired_at: new Date(Date.now() + 30*24*60*60*1000), user_id: user.value?.id || null
       }]).select()
-      
-      if (error) { console.error('Insert error:', error); throw error }
-      if (!data || data.length === 0) throw new Error('Gagal menyimpan: tidak ada response')
-      
       savedSlug.value = slug; currentWeddingId.value = data[0].id
       localStorage.setItem('currentWeddingId', data[0].id); localStorage.setItem('currentSlug', slug)
       showSuccess('Tersimpan!')
     }
     await loadGuestList(); await loadGiftList()
-  } catch (err) { console.error('Save error:', err); showError(err, 'Gagal menyimpan undangan') } finally { saving.value = false }
+  } catch (err) { showError(err, 'Gagal') } finally { saving.value = false }
 }
 
-const resetForm = () => { if (confirm('Reset?')) { Object.assign(form, { nama_pria: '', nama_wanita: '', akad_date: '', akad_time: '', akad_location: '', resepsi_date: '', resepsi_time: '', resepsi_location: '', orangtua_pria: '', orangtua_wanita: '', rekening: '', event_type: 'wedding', template: 'elegan', theme: { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: [] }); savedSlug.value = ''; currentWeddingId.value = null; guestList.value = []; giftList.value = []; previewMode.value = 'cover'; localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
+const resetForm = () => { if (confirm('Reset?')) { Object.assign(form, { nama_pria: '', nama_wanita: '', akad_date: '', akad_time: '', akad_location: '', resepsi_date: '', resepsi_time: '', resepsi_location: '', orangtua_pria: '', orangtua_wanita: '', rekening: '', event_type: 'wedding', template: 'elegan', love_story: [], theme: { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: [] }); savedSlug.value = ''; currentWeddingId.value = null; guestList.value = []; giftList.value = []; previewMode.value = 'cover'; localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
 const copyMainLink = () => { navigator.clipboard.writeText(`${baseUrl}/wedding/${savedSlug.value}`); showSuccess('Link dicopy!') }
 const previewWedding = () => window.open(`${baseUrl}/wedding/${savedSlug.value}`, '_blank')
 
@@ -256,7 +294,7 @@ onMounted(async () => {
   const selectedEventType = sessionStorage.getItem('selectedEventType')
   if (selectedEventType && !localStorage.getItem('currentWeddingId')) { form.event_type = selectedEventType; sessionStorage.removeItem('selectedEventType') }
   const savedId = localStorage.getItem('currentWeddingId'); const savedSlugData = localStorage.getItem('currentSlug')
-  if (savedId && savedSlugData) { currentWeddingId.value = savedId; savedSlug.value = savedSlugData; try { const { data: w } = await supabase.from('weddings').select('*').eq('id', savedId).maybeSingle(); if (w) { Object.assign(form, { nama_pria: w.nama_pria || '', nama_wanita: w.nama_wanita || '', akad_date: w.akad_date || '', akad_time: w.akad_time || '', akad_location: w.akad_location || '', resepsi_date: w.resepsi_date || '', resepsi_time: w.resepsi_time || '', resepsi_location: w.resepsi_location || '', orangtua_pria: w.orangtua_pria || '', orangtua_wanita: w.orangtua_wanita || '', rekening: w.rekening || '', event_type: w.event_type || 'wedding', template: w.template || 'elegan', theme: w.theme_settings || { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: w.theme_settings?.gallery || [] }) }; await loadGuestList(); await loadGiftList() } catch { localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
+  if (savedId && savedSlugData) { currentWeddingId.value = savedId; savedSlug.value = savedSlugData; try { const { data: w } = await supabase.from('weddings').select('*').eq('id', savedId).maybeSingle(); if (w) { Object.assign(form, { nama_pria: w.nama_pria || '', nama_wanita: w.nama_wanita || '', akad_date: w.akad_date || '', akad_time: w.akad_time || '', akad_location: w.akad_location || '', resepsi_date: w.resepsi_date || '', resepsi_time: w.resepsi_time || '', resepsi_location: w.resepsi_location || '', orangtua_pria: w.orangtua_pria || '', orangtua_wanita: w.orangtua_wanita || '', rekening: w.rekening || '', event_type: w.event_type || 'wedding', template: w.template || 'elegan', love_story: w.love_story || [], theme: w.theme_settings || { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: w.theme_settings?.gallery || [] }) }; await loadGuestList(); await loadGiftList() } catch { localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
 })
 
 onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) })
@@ -281,6 +319,7 @@ onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) 
 .limit-reached p { color: #ef4444; font-weight: 600; margin-bottom: 8px; }
 .section { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
 .section h3 { margin-bottom: 15px; }
+.section-desc { font-size: 13px; color: #888; margin-bottom: 15px; }
 label { display: block; margin-top: 12px; font-weight: 600; color: #555; font-size: 14px; }
 input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
 .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -332,6 +371,15 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .guest-filter input { flex: 2; }
 .guest-filter select { flex: 1; }
 .dibeli { color: #4caf50; font-weight: 700; }
+
+/* LOVE STORY FORM */
+.love-story-form { margin-top: 10px; }
+.story-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
+.story-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.story-number { font-weight: 700; color: #9b87f5; font-size: 14px; }
+.btn-del-sm { background: #fee2e2; color: #ef4444; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.btn-add-story { width: 100%; padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 5px; }
+
 .panel-kanan { width: 55%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
 .mockup-hp { width: 360px; height: 680px; background: white; border-radius: 45px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 10px solid #1a1a1a; overflow-y: auto; }
 .hp-content { text-align: center; }
