@@ -131,7 +131,7 @@ const form = reactive({
 const saving = ref(false); const uploadingBg = ref(false); const uploadingGallery = ref(false)
 const uploadProgress = ref('0/0'); const uploadingMusic = ref(false)
 const savedSlug = ref(''); const baseUrl = window.location.origin
-const previewMode = ref('cover'); const selectedPreviewGuestId = ref('')
+const previewMode = ref('cover')
 const loadingText = computed(() => saving.value ? 'Menyimpan...' : 'Memproses...')
 
 const newGuest = reactive({ name: '', nickname: '', category: 'Keluarga', seats: 1 })
@@ -148,7 +148,7 @@ const canAddMoreGifts = computed(() => planLimits.value.maxGifts === Infinity ||
 
 const previewStyles = computed(() => ({ backgroundColor: form.theme.background_type === 'solid' ? form.theme.background_value : 'transparent', backgroundImage: form.theme.background_type === 'image' ? `url(${form.theme.background_value})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', color: form.theme.primary_color, fontFamily: form.theme.font_family }))
 const filteredGuestList = computed(() => { let f = guestList.value; if (searchGuest.value) { const s = searchGuest.value.toLowerCase(); f = f.filter(g => g.name.toLowerCase().includes(s) || (g.nickname && g.nickname.toLowerCase().includes(s))) } if (filterCategory.value) f = f.filter(g => g.category === filterCategory.value); return f })
-const previewGuestName = computed(() => selectedPreviewGuestId.value ? (guestList.value.find(x => x.id === selectedPreviewGuestId.value)?.nickname || '...') : 'Bapak/Ibu/Saudara/i')
+const previewGuestName = computed(() => 'Bapak/Ibu/Saudara/i')
 const purchasedGiftsCount = computed(() => giftList.value.filter(g => g.status).length)
 const availableGiftsCount = computed(() => giftList.value.filter(g => !g.status).length)
 const recentlyPurchasedGifts = computed(() => giftList.value.filter(g => g.status && g.buyer_name))
@@ -174,89 +174,87 @@ const uploadBackground = async (e) => { const f = e.target.files[0]; if (!f) ret
 const uploadGallery = async (e) => { const files = Array.from(e.target.files); if (!files.length) return; uploadingGallery.value = true; let up = 0; try { for (const f of files) { uploadProgress.value = `${up}/${files.length}`; if (!f.type.startsWith('image/')) continue; if (f.size > 10*1024*1024) continue; const c = await imageCompression(f, { maxSizeMB: 0.3, maxWidthOrHeight: 800 }); const { data } = await supabase.storage.from('weddings').upload(`gal-${Date.now()}-${Math.random().toString(36).slice(2)}.${f.name.split('.').pop()}`, c); form.gallery.push(supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl); up++ } if (up > 0) showSuccess(`${up} foto!`) } catch { showError(null, 'Gagal') } finally { uploadingGallery.value = false; uploadProgress.value = '0/0'; e.target.value = '' } }
 const uploadMusic = async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 20*1024*1024) { showError(null, 'Max 20MB'); return }; uploadingMusic.value = true; try { const { data } = await supabase.storage.from('weddings').upload(`mus-${Date.now()}.${f.name.split('.').pop()}`, f, { contentType: 'audio/mpeg' }); form.theme.music_url = supabase.storage.from('weddings').getPublicUrl(data.path).data.publicUrl; showSuccess('Musik!') } catch { showError(null, 'Gagal') } finally { uploadingMusic.value = false; e.target.value = '' } }
 
+// ========== SAVE WEDDING (FIXED ERROR HANDLING) ==========
 const saveWedding = async () => {
   if (!form.nama_pria || !form.akad_date || !form.akad_time || !form.akad_location) { showError(null, 'Isi data wajib!'); return }
+  
   saving.value = true
   try {
     if (currentWeddingId.value) {
-      await supabase.from('weddings').update({ nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location, resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null, orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening, event_type: form.event_type, template: form.template, theme_settings: { ...form.theme, gallery: form.gallery } }).eq('id', currentWeddingId.value)
+      // UPDATE
+      const { error } = await supabase.from('weddings').update({
+        nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
+        resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
+        orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
+        event_type: form.event_type, template: form.template, theme_settings: { ...form.theme, gallery: form.gallery }
+      }).eq('id', currentWeddingId.value)
+      if (error) throw error
       showSuccess('Diupdate!')
     } else {
+      // INSERT BARU
       const { allowed, message } = await canCreateWedding(supabase)
       if (!allowed) { alert(message); return }
+      
       const slug = `${(form.nama_pria || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`
-      const { data } = await supabase.from('weddings').insert([{ nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location, resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null, orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening, event_type: form.event_type, template: form.template, slug, theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true, expired_at: new Date(Date.now() + 30*24*60*60*1000), user_id: user.value?.id || null }]).select()
+      const userId = user.value?.id || null
+      
+      const { data, error } = await supabase.from('weddings').insert([{ 
+        nama_pria: form.nama_pria, nama_wanita: form.nama_wanita, akad_date: form.akad_date, akad_time: form.akad_time, akad_location: form.akad_location,
+        resepsi_date: form.resepsi_date || null, resepsi_time: form.resepsi_time || null, resepsi_location: form.resepsi_location || null,
+        orangtua_pria: form.orangtua_pria, orangtua_wanita: form.orangtua_wanita, rekening: form.rekening,
+        event_type: form.event_type, template: form.template, slug: slug,
+        theme_settings: { ...form.theme, gallery: form.gallery }, is_active: true,
+        expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        user_id: userId
+      }]).select()
+      
+      if (error) { console.error('Insert error:', error); throw error }
+      if (!data || data.length === 0) throw new Error('Gagal menyimpan: tidak ada response')
+      
       savedSlug.value = slug; currentWeddingId.value = data[0].id
       localStorage.setItem('currentWeddingId', data[0].id); localStorage.setItem('currentSlug', slug)
       showSuccess('Tersimpan!')
     }
     await loadGuestList(); await loadGiftList()
-  } catch (err) { showError(err, 'Gagal') } finally { saving.value = false }
+  } catch (err) { console.error('Save error:', err); showError(err, 'Gagal menyimpan undangan') } finally { saving.value = false }
 }
 
 const resetForm = () => { if (confirm('Reset?')) { Object.assign(form, { nama_pria: '', nama_wanita: '', akad_date: '', akad_time: '', akad_location: '', resepsi_date: '', resepsi_time: '', resepsi_location: '', orangtua_pria: '', orangtua_wanita: '', rekening: '', event_type: 'wedding', template: 'elegan', theme: { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: [] }); savedSlug.value = ''; currentWeddingId.value = null; guestList.value = []; giftList.value = []; previewMode.value = 'cover'; localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
 const copyMainLink = () => { navigator.clipboard.writeText(`${baseUrl}/wedding/${savedSlug.value}`); showSuccess('Link dicopy!') }
 const previewWedding = () => window.open(`${baseUrl}/wedding/${savedSlug.value}`, '_blank')
 
-const loadGuestList = async () => { if (!currentWeddingId.value) return; loadingGuests.value = true; try { const { data } = await supabase.from('guests').select('*').eq('wedding_id', currentWeddingId.value); guestList.value = (data || []).map(g => ({ id: g.id, name: g.nama_tamu, nickname: g.nickname || '', category: g.category || 'Keluarga', seats: g.seats || 1, slug: g.unique_slug, status_buka: g.status_buka })) } catch { } finally { loadingGuests.value = false } }
-const addGuest = async () => { if (!canAddMoreGuests.value) { alert('❌ Limit!'); return } if (!newGuest.name.trim()) { showError(null, 'Nama wajib'); return }; try { const slug = `${newGuest.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now().toString().slice(-6)}`; const { data, error } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: newGuest.name, nickname: newGuest.nickname || null, category: newGuest.category, seats: newGuest.seats, unique_slug: slug, status_buka: false }]).select(); if (error) { showError(error); return }; if (!data) return; guestList.value.push({ id: data[0].id, name: newGuest.name, nickname: newGuest.nickname, category: newGuest.category, seats: newGuest.seats, slug, status_buka: false }); Object.assign(newGuest, { name: '', nickname: '', category: 'Keluarga', seats: 1 }); showSuccess('Tamu ditambah!') } catch { showError(null, 'Gagal') } }
+const loadGuestList = async () => { if (!currentWeddingId.value) return; loadingGuests.value = true; try { const { data } = await supabase.from('guests').select('*').eq('wedding_id', currentWeddingId.value); guestList.value = (data || []).map(g => ({ id: g.id, name: g.nama_tamu, nickname: g.nickname || '', category: g.category || 'Keluarga', seats: g.seats || 1, slug: g.unique_slug })) } catch { } finally { loadingGuests.value = false } }
+const addGuest = async () => { if (!canAddMoreGuests.value) { alert('❌ Limit!'); return } if (!newGuest.name.trim()) { showError(null, 'Nama wajib'); return }; try { const slug = `${newGuest.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now().toString().slice(-6)}`; const { data, error } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: newGuest.name, nickname: newGuest.nickname || null, category: newGuest.category, seats: newGuest.seats, unique_slug: slug, status_buka: false }]).select(); if (error) { showError(error); return }; if (!data) return; guestList.value.push({ id: data[0].id, name: newGuest.name, nickname: newGuest.nickname, category: newGuest.category, seats: newGuest.seats, slug }); Object.assign(newGuest, { name: '', nickname: '', category: 'Keluarga', seats: 1 }); showSuccess('Tamu ditambah!') } catch { showError(null, 'Gagal') } }
 const copyGuestLink = (slug) => { navigator.clipboard.writeText(`${baseUrl}/wedding/${savedSlug.value}?to=${slug}`); showSuccess('Link dicopy!') }
 const shareWA = (guest) => { window.open(`https://wa.me/?text=${encodeURIComponent(`Yth. ${guest.nickname || guest.name}, Anda diundang ke ${form.nama_pria}: ${baseUrl}/wedding/${savedSlug.value}?to=${guest.slug}`)}`, '_blank') }
 const deleteGuest = async (id) => { if (confirm('Hapus?')) { await supabase.from('guests').delete().eq('id', id); guestList.value = guestList.value.filter(g => g.id !== id); showSuccess('Dihapus') } }
 
 const handleCSVUpload = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { const lines = ev.target.result.split('\n').filter(line => line.trim()); csvPreview.value = lines.map(line => { const parts = line.split(',').map(p => p.trim()); return { name: parts[0], nickname: parts[1] || '', category: parts[2] || 'Keluarga', seats: parseInt(parts[3]) || 1 } }).filter(item => item.name) }; reader.readAsText(file, 'UTF-8'); e.target.value = '' }
 const clearCSVPreview = () => { csvPreview.value = [] }
-const importCSV = async () => { if (!csvPreview.value.length) return; const totalAfter = guestList.value.length + csvPreview.value.length; if (planLimits.value.maxGuests !== Infinity && totalAfter > planLimits.value.maxGuests) { alert(`❌ Total: ${totalAfter}/${planLimits.value.maxGuests}`); return }; let success = 0; for (const item of csvPreview.value) { try { const slug = `${item.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now()}-${Math.random().toString(36).substring(4)}`; const { data } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: item.name, nickname: item.nickname || null, category: item.category, seats: item.seats, unique_slug: slug, status_buka: false }]).select(); guestList.value.push({ id: data[0].id, name: item.name, nickname: item.nickname, category: item.category, seats: item.seats, slug, status_buka: false }); success++ } catch { } }; showSuccess(`Import: ${success}`); csvPreview.value = [] }
+const importCSV = async () => { if (!csvPreview.value.length) return; const totalAfter = guestList.value.length + csvPreview.value.length; if (planLimits.value.maxGuests !== Infinity && totalAfter > planLimits.value.maxGuests) { alert(`❌ Total: ${totalAfter}/${planLimits.value.maxGuests}`); return }; let success = 0; for (const item of csvPreview.value) { try { const slug = `${item.name.toLowerCase().replace(/[^a-z0-9-]/g, '')}-${Date.now()}-${Math.random().toString(36).substring(4)}`; const { data } = await supabase.from('guests').insert([{ wedding_id: currentWeddingId.value, nama_tamu: item.name, nickname: item.nickname || null, category: item.category, seats: item.seats, unique_slug: slug, status_buka: false }]).select(); guestList.value.push({ id: data[0].id, name: item.name, nickname: item.nickname, category: item.category, seats: item.seats, slug }); success++ } catch { } }; showSuccess(`Import: ${success}`); csvPreview.value = [] }
 
 const loadGiftList = async () => { if (!currentWeddingId.value) return; loadingGifts.value = true; try { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', currentWeddingId.value); giftList.value = (data || []).map(g => ({ id: g.id, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, status: g.status, buyer_name: g.dibeli_oleh?.nama_tamu || null, resi: g.nomor_resi })) } catch { } finally { loadingGifts.value = false } }
 const addGift = async () => { if (!canAddMoreGifts.value) { alert('❌ Limit!'); return } if (!newGift.name) { showError(null, 'Nama wajib'); return }; try { const { data } = await supabase.from('gifts').insert([{ wedding_id: currentWeddingId.value, nama_barang: newGift.name, harga_estimasi: newGift.price, link_produk: newGift.link, gambar_url: newGift.image, status: false }]).select(); giftList.value.push({ id: data[0].id, name: newGift.name, price: newGift.price, link: newGift.link, image: newGift.image, status: false, buyer_name: null, resi: null }); Object.assign(newGift, { name: '', price: null, link: '', image: '' }); showSuccess('Kado ditambah!') } catch { showError(null, 'Gagal') } }
 const deleteGift = async (id) => { if (confirm('Hapus?')) { await supabase.from('gifts').delete().eq('id', id); giftList.value = giftList.value.filter(g => g.id !== id); showSuccess('Dihapus') } }
 
-const handleLogout = async () => {
-  await supabase.auth.signOut()
-  localStorage.removeItem('session')
-  localStorage.removeItem('currentWeddingId')
-  localStorage.removeItem('currentSlug')
-  router.push('/login')
-}
+const handleLogout = async () => { await supabase.auth.signOut(); localStorage.removeItem('session'); localStorage.removeItem('currentWeddingId'); localStorage.removeItem('currentSlug'); router.push('/login') }
 
 onMounted(async () => {
-  // Cek session custom
   const session = JSON.parse(localStorage.getItem('session') || 'null')
-  
-  // Cek session Supabase (Google)
   const { data: { session: supabaseSession } } = await supabase.auth.getSession()
   
   if (supabaseSession?.user) {
-    const email = supabaseSession.user.email
-    const name = supabaseSession.user.user_metadata?.full_name || email
-    
-    const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).single()
+    const email = supabaseSession.user.email; const name = supabaseSession.user.user_metadata?.full_name || email
+    const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).maybeSingle()
     let userData = existingUser
-    if (!existingUser) {
-      const { data: newUser } = await supabase.from('users').insert([{ email, name, role: 'user', plan: 'basic', password_hash: 'google-oauth' }]).select()
-      userData = newUser?.[0]
-    }
-    
-    localStorage.setItem('session', JSON.stringify({
-      user: { id: userData?.id || 'google-user', email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' },
-      token: supabaseSession.access_token,
-      expires: Date.now() + 30 * 24 * 60 * 60 * 1000
-    }))
-    
-    user.value = { id: userData?.id || 'google-user', email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' }
-  } else if (session?.user) {
-    user.value = session.user
-  } else {
-    router.push('/login')
-    return
-  }
+    if (!existingUser) { const { data: newUser } = await supabase.from('users').insert([{ email, name, role: 'user', plan: 'basic', password_hash: 'google-oauth' }]).select(); userData = newUser?.[0] }
+    localStorage.setItem('session', JSON.stringify({ user: { id: userData?.id || supabaseSession.user.id, email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' }, token: supabaseSession.access_token, expires: Date.now() + 30 * 24 * 60 * 60 * 1000 }))
+    user.value = { id: userData?.id || supabaseSession.user.id, email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' }
+  } else if (session?.user) { user.value = session.user } else { router.push('/login'); return }
   
   planLimits.value = getPlanLimits()
-  
   const selectedEventType = sessionStorage.getItem('selectedEventType')
   if (selectedEventType && !localStorage.getItem('currentWeddingId')) { form.event_type = selectedEventType; sessionStorage.removeItem('selectedEventType') }
-  
   const savedId = localStorage.getItem('currentWeddingId'); const savedSlugData = localStorage.getItem('currentSlug')
   if (savedId && savedSlugData) { currentWeddingId.value = savedId; savedSlug.value = savedSlugData; try { const { data: w } = await supabase.from('weddings').select('*').eq('id', savedId).maybeSingle(); if (w) { Object.assign(form, { nama_pria: w.nama_pria || '', nama_wanita: w.nama_wanita || '', akad_date: w.akad_date || '', akad_time: w.akad_time || '', akad_location: w.akad_location || '', resepsi_date: w.resepsi_date || '', resepsi_time: w.resepsi_time || '', resepsi_location: w.resepsi_location || '', orangtua_pria: w.orangtua_pria || '', orangtua_wanita: w.orangtua_wanita || '', rekening: w.rekening || '', event_type: w.event_type || 'wedding', template: w.template || 'elegan', theme: w.theme_settings || { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: w.theme_settings?.gallery || [] }) }; await loadGuestList(); await loadGiftList() } catch { localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
 })
