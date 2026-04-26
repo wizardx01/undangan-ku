@@ -11,7 +11,7 @@ import ProfileView from './views/ProfileView.vue'
 import AdminView from './views/AdminView.vue'
 import DashboardListView from './views/DashboardListView.vue'
 import DashboardEditView from './views/DashboardEditView.vue'
-
+import AuthCallbackView from './views/AuthCallbackView.vue'
 
 // CSS
 import 'aos/dist/aos.css'
