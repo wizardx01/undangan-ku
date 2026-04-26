@@ -28,6 +28,7 @@ const router = createRouter({
     { path: '/dashboard', component: DashboardListView, meta: { requiresAuth: true } },
     { path: '/dashboard/edit', component: DashboardEditView, meta: { requiresAuth: true } },
     { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
+    { path: '/auth/callback', component: AuthCallbackView },
     
     // Admin only routes
     { path: '/admin', component: AdminView, meta: { requiresAuth: true, role: 'admin' } },
