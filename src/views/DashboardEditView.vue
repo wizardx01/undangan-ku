@@ -46,7 +46,7 @@
 
         <div class="section" v-if="form.event_type === 'wedding'"><h3>🎉 Resepsi</h3><div class="form-row"><input type="date" v-model="form.resepsi_date" /><input type="time" v-model="form.resepsi_time" /></div><label>Lokasi</label><textarea v-model="form.resepsi_location" rows="2"></textarea></div>
 
-        <div class="section"><h3>💳 Rekening (Opsional)</h3><textarea v-model="form.rekening" rows="3" placeholder="BCA: 123456789 a/n Budi"></textarea></div>
+        <div class="section"><h3>💳 Rekening</h3><textarea v-model="form.rekening" rows="3" placeholder="BCA: 123456789 a/n Budi"></textarea></div>
 
         <div class="section"><h3>🎨 Template</h3>
           <div class="template-selector">
@@ -84,42 +84,20 @@
       </form>
     </div>
 
-    <!-- PANEL KANAN: PREVIEW (DYNAMIC ICON & TITLE) -->
+    <!-- PANEL KANAN: PREVIEW -->
     <div class="panel-kanan">
-      <!-- ELEGAN -->
       <div v-if="form.template === 'elegan'" class="mockup-hp" :style="previewStyles"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover">
-          <div class="cover-decoration">{{ getMockupIcon() }}</div>
-          <p class="cover-subtitle">{{ getMockupCoverTitle() }}</p>
-          <h1>{{ getPreviewTitle() }}</h1>
-          <p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Acara' }}</p>
-          <div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div>
-          <button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button>
-        </div>
+        <div v-if="previewMode === 'cover'" class="preview-cover"><div class="cover-decoration">{{ getMockupIcon() }}</div><p class="cover-subtitle">{{ getMockupCoverTitle() }}</p><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) || 'Tanggal Acara' }}</p><div class="mock-guest-welcome"><p>Kepada Yth.</p><strong>{{ previewGuestName }}</strong></div><button class="mock-open-btn" @click="previewMode = 'content'">💌 Buka</button></div>
         <div v-else class="preview-content"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="mock-countdown"><span>00 Hari</span><span>00 Jam</span><span>00 Mnt</span></div><div class="mock-event"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
       </div></div>
 
-      <!-- MINIMALIS -->
       <div v-else-if="form.template === 'minimalis'" class="mockup-hp minimalis-preview"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover-minimalis">
-          <div class="cover-icon">{{ getMockupIcon() }}</div>
-          <h1>{{ getPreviewTitle() }}</h1>
-          <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
-          <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
-          <button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka</button>
-        </div>
+        <div v-if="previewMode === 'cover'" class="preview-cover-minimalis"><div class="cover-icon">{{ getMockupIcon() }}</div><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn minimalis-btn" @click="previewMode = 'content'">💌 Buka</button></div>
         <div v-else class="preview-content-minimalis"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
       </div></div>
 
-      <!-- FLORAL -->
       <div v-else-if="form.template === 'floral'" class="mockup-hp floral-preview"><div class="hp-content">
-        <div v-if="previewMode === 'cover'" class="preview-cover-floral"><div class="floral-border">
-          <div class="cover-icon">{{ getMockupIcon() }}</div>
-          <h1>{{ getPreviewTitle() }}</h1>
-          <p class="cover-date">{{ formatDate(form.akad_date) }}</p>
-          <p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p>
-          <button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka</button>
-        </div></div>
+        <div v-if="previewMode === 'cover'" class="preview-cover-floral"><div class="floral-border"><div class="cover-icon">{{ getMockupIcon() }}</div><h1>{{ getPreviewTitle() }}</h1><p class="cover-date">{{ formatDate(form.akad_date) }}</p><p class="cover-guest">Kepada Yth.<br><strong>{{ previewGuestName }}</strong></p><button class="mock-open-btn floral-btn" @click="previewMode = 'content'">💐 Buka</button></div></div>
         <div v-else class="preview-content-floral"><button class="mock-back-btn" @click="previewMode = 'cover'">←</button><div class="bismillah">﷽</div><h1>{{ getPreviewTitle() }}</h1><div class="countdown-mini"><span>00 Hari</span><span>00 Jam</span></div><div class="event-mini"><h4>📅 Acara</h4><p>{{ formatDate(form.akad_date) }}</p></div></div>
       </div></div>
 
@@ -154,8 +132,7 @@ const saving = ref(false); const uploadingBg = ref(false); const uploadingGaller
 const uploadProgress = ref('0/0'); const uploadingMusic = ref(false)
 const savedSlug = ref(''); const baseUrl = window.location.origin
 const previewMode = ref('cover'); const selectedPreviewGuestId = ref('')
-
-const loadingText = computed(() => saving.value ? 'Menyimpan...' : uploadingBg.value ? 'Upload BG...' : 'Memproses...')
+const loadingText = computed(() => saving.value ? 'Menyimpan...' : 'Memproses...')
 
 const newGuest = reactive({ name: '', nickname: '', category: 'Keluarga', seats: 1 })
 const guestList = ref([]); const currentWeddingId = ref(null); const loadingGuests = ref(false)
@@ -181,20 +158,9 @@ const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.
 
 const getEventLabel = (t) => ({ wedding: '💍 Wedding', sunatan: '✂️ Sunatan', aqiqah: '👶 Aqiqah', syukuran: '🏠 Syukuran' }[t] || '💍 Wedding')
 const getEventDataLabel = () => ({ wedding: 'Data Mempelai', sunatan: 'Data Anak', aqiqah: 'Data Bayi', syukuran: 'Data Acara' }[form.event_type] || 'Data Mempelai')
-
-// DYNAMIC MOCKUP FUNCTIONS
-const getMockupIcon = () => {
-  const icons = { wedding: '💐', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏠' }
-  return icons[form.event_type] || '💐'
-}
-const getMockupCoverTitle = () => {
-  const titles = { wedding: 'The Wedding Of', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }
-  return titles[form.event_type] || 'The Wedding Of'
-}
-const getPreviewTitle = () => {
-  if (form.event_type === 'wedding') return `${form.nama_pria || '...'} & ${form.nama_wanita || '...'}`
-  return form.nama_pria || '...'
-}
+const getMockupIcon = () => ({ wedding: '💐', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏠' }[form.event_type] || '💐')
+const getMockupCoverTitle = () => ({ wedding: 'The Wedding Of', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[form.event_type] || 'The Wedding Of')
+const getPreviewTitle = () => form.event_type === 'wedding' ? `${form.nama_pria || '...'} & ${form.nama_wanita || '...'}` : form.nama_pria || '...'
 
 const upgradePlan = () => {
   const email = user.value?.email || ''
@@ -246,14 +212,51 @@ const loadGiftList = async () => { if (!currentWeddingId.value) return; loadingG
 const addGift = async () => { if (!canAddMoreGifts.value) { alert('❌ Limit!'); return } if (!newGift.name) { showError(null, 'Nama wajib'); return }; try { const { data } = await supabase.from('gifts').insert([{ wedding_id: currentWeddingId.value, nama_barang: newGift.name, harga_estimasi: newGift.price, link_produk: newGift.link, gambar_url: newGift.image, status: false }]).select(); giftList.value.push({ id: data[0].id, name: newGift.name, price: newGift.price, link: newGift.link, image: newGift.image, status: false, buyer_name: null, resi: null }); Object.assign(newGift, { name: '', price: null, link: '', image: '' }); showSuccess('Kado ditambah!') } catch { showError(null, 'Gagal') } }
 const deleteGift = async (id) => { if (confirm('Hapus?')) { await supabase.from('gifts').delete().eq('id', id); giftList.value = giftList.value.filter(g => g.id !== id); showSuccess('Dihapus') } }
 
-const handleLogout = () => { localStorage.removeItem('session'); localStorage.removeItem('currentWeddingId'); localStorage.removeItem('currentSlug'); router.push('/login') }
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+  localStorage.removeItem('session')
+  localStorage.removeItem('currentWeddingId')
+  localStorage.removeItem('currentSlug')
+  router.push('/login')
+}
 
 onMounted(async () => {
+  // Cek session custom
   const session = JSON.parse(localStorage.getItem('session') || 'null')
-  if (!session?.user) { router.push('/login'); return }
-  user.value = session.user; planLimits.value = getPlanLimits()
+  
+  // Cek session Supabase (Google)
+  const { data: { session: supabaseSession } } = await supabase.auth.getSession()
+  
+  if (supabaseSession?.user) {
+    const email = supabaseSession.user.email
+    const name = supabaseSession.user.user_metadata?.full_name || email
+    
+    const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).single()
+    let userData = existingUser
+    if (!existingUser) {
+      const { data: newUser } = await supabase.from('users').insert([{ email, name, role: 'user', plan: 'basic', password_hash: 'google-oauth' }]).select()
+      userData = newUser?.[0]
+    }
+    
+    localStorage.setItem('session', JSON.stringify({
+      user: { id: userData?.id || 'google-user', email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' },
+      token: supabaseSession.access_token,
+      expires: Date.now() + 30 * 24 * 60 * 60 * 1000
+    }))
+    
+    user.value = { id: userData?.id || 'google-user', email, name, role: userData?.role || 'user', plan: userData?.plan || 'basic' }
+  } else if (session?.user) {
+    user.value = session.user
+  } else {
+    router.push('/login')
+    return
+  }
+  
+  planLimits.value = getPlanLimits()
+  
   const selectedEventType = sessionStorage.getItem('selectedEventType')
   if (selectedEventType && !localStorage.getItem('currentWeddingId')) { form.event_type = selectedEventType; sessionStorage.removeItem('selectedEventType') }
+  
   const savedId = localStorage.getItem('currentWeddingId'); const savedSlugData = localStorage.getItem('currentSlug')
   if (savedId && savedSlugData) { currentWeddingId.value = savedId; savedSlug.value = savedSlugData; try { const { data: w } = await supabase.from('weddings').select('*').eq('id', savedId).maybeSingle(); if (w) { Object.assign(form, { nama_pria: w.nama_pria || '', nama_wanita: w.nama_wanita || '', akad_date: w.akad_date || '', akad_time: w.akad_time || '', akad_location: w.akad_location || '', resepsi_date: w.resepsi_date || '', resepsi_time: w.resepsi_time || '', resepsi_location: w.resepsi_location || '', orangtua_pria: w.orangtua_pria || '', orangtua_wanita: w.orangtua_wanita || '', rekening: w.rekening || '', event_type: w.event_type || 'wedding', template: w.template || 'elegan', theme: w.theme_settings || { primary_color: '#9b87f5', font_family: 'Poppins, sans-serif', background_type: 'solid', background_value: '#ffffff', music_url: '' }, gallery: w.theme_settings?.gallery || [] }) }; await loadGuestList(); await loadGiftList() } catch { localStorage.removeItem('currentSlug'); localStorage.removeItem('currentWeddingId') } }
 })
@@ -266,7 +269,7 @@ onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) 
 .panel-kiri { width: 45%; background: white; padding: 30px; border-right: 1px solid #e0e0e0; overflow-y: auto; max-height: 100vh; }
 .header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; margin-bottom: 20px; gap: 15px; }
 .header h1 { font-size: 28px; color: #9b87f5; }
-.header p { color: #666; margin-top: 5px; }
+.header p { color: #666; }
 .header-actions { display: flex; gap: 10px; }
 .btn-back-list { background: transparent; color: #9b87f5; border: 1px solid #9b87f5; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 10px; }
 .btn-settings { background: #f0f0f0; color: #555; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
@@ -278,18 +281,12 @@ onUnmounted(() => { if (giftRefreshInterval) clearInterval(giftRefreshInterval) 
 .btn-upgrade { margin-left: auto; padding: 8px 16px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .limit-reached { background: #fef2f2; padding: 15px; border-radius: 8px; text-align: center; }
 .limit-reached p { color: #ef4444; font-weight: 600; margin-bottom: 8px; }
-.loading-inline { color: #9b87f5; margin-top: 8px; font-style: italic; font-size: 13px; }
 .section { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
 .section h3 { margin-bottom: 15px; }
 label { display: block; margin-top: 12px; font-weight: 600; color: #555; font-size: 14px; }
 input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
 .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .form-row input, .form-row select { flex: 1; }
-.preview-bg { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-top: 10px; }
-.gallery-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-.gallery-item { position: relative; width: 100px; height: 100px; }
-.gallery-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
-.gallery-item button { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; }
 .template-selector { display: flex; gap: 12px; margin-top: 10px; }
 .template-option { flex: 1; text-align: center; cursor: pointer; padding: 12px 8px; border-radius: 12px; border: 2px solid transparent; background: white; }
 .template-option.active { border-color: #9b87f5; }
@@ -308,7 +305,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .link-box { display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; }
 .link-box code { flex: 1; font-size: 12px; word-break: break-all; }
 .preview-btn { width: 100%; margin-top: 10px; padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
 .gift-summary-box { margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px; }
 .gift-summary-header { display: flex; justify-content: space-between; align-items: center; }
 .btn-refresh { background: white; border: 1px solid #fcd34d; padding: 8px 16px; border-radius: 50px; cursor: pointer; font-weight: 600; }
@@ -319,22 +315,9 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .stat-label { font-size: 11px; color: #666; }
 .recent-purchases { background: white; padding: 12px; border-radius: 10px; margin-top: 10px; }
 .recent-item { display: flex; gap: 8px; padding: 4px 0; font-size: 12px; flex-wrap: wrap; }
-
 .guest-form-box, .gift-form-box { display: flex; flex-direction: column; gap: 10px; }
 .btn-add-guest { padding: 12px; background: #9b87f5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-
 .csv-section { background: white; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #e0e0e0; }
-.csv-hint { font-size: 12px; color: #666; }
-.csv-upload-area { text-align: center; }
-.csv-upload-area input[type="file"] { display: none; }
-.btn-choose-csv { padding: 10px 20px; background: #f0f0f0; border: 1px dashed #ccc; border-radius: 8px; cursor: pointer; }
-.csv-preview { margin-top: 12px; padding: 12px; background: #f9f9f9; border-radius: 8px; }
-.csv-preview-header { display: flex; justify-content: space-between; align-items: center; }
-.btn-clear-csv { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-.csv-preview-list { max-height: 120px; overflow-y: auto; margin-bottom: 10px; }
-.csv-preview-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; font-size: 12px; }
-.btn-import-csv { width: 100%; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-
 .guest-list-full, .gift-list { max-height: 300px; overflow-y: auto; }
 .guest-item-full, .gift-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; flex-wrap: wrap; gap: 8px; }
 .guest-link-box { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
@@ -351,7 +334,6 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .guest-filter input { flex: 2; }
 .guest-filter select { flex: 1; }
 .dibeli { color: #4caf50; font-weight: 700; }
-
 .panel-kanan { width: 55%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
 .mockup-hp { width: 360px; height: 680px; background: white; border-radius: 45px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 10px solid #1a1a1a; overflow-y: auto; }
 .hp-content { text-align: center; }
@@ -371,35 +353,31 @@ input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1
 .event-mini { background: white; border: 1px solid #eee; }
 .mock-event h4, .event-mini h4 { margin-bottom: 5px; font-size: 14px; }
 .bismillah { font-size: 32px; opacity: 0.6; margin-bottom: 10px; }
-
 .minimalis-preview { background: #fafafa !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-minimalis { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 560px; text-align: center; padding: 20px; }
 .preview-cover-minimalis .cover-icon { font-size: 50px; margin-bottom: 15px; }
-.preview-cover-minimalis h1 { font-size: 26px; font-weight: 300; margin: 15px 0; color: #2c3e50; line-height: 1.4; }
-.preview-cover-minimalis .cover-date { font-size: 14px; color: #888; margin-bottom: 25px; }
-.preview-cover-minimalis .cover-guest { font-size: 14px; color: #666; margin: 20px 0; line-height: 1.8; }
-.preview-cover-minimalis strong { font-size: 20px; display: block; margin-top: 5px; color: #2c3e50; }
+.preview-cover-minimalis h1 { font-size: 26px; font-weight: 300; margin: 15px 0; color: #2c3e50; }
+.preview-cover-minimalis .cover-date { font-size: 14px; color: #888; }
+.preview-cover-minimalis .cover-guest { font-size: 14px; color: #666; margin: 20px 0; }
+.preview-cover-minimalis strong { font-size: 20px; display: block; color: #2c3e50; }
 .minimalis-btn { background: #2c3e50 !important; }
 .preview-content-minimalis { text-align: center; padding: 20px 10px; }
-.preview-content-minimalis h1 { font-size: 24px; font-weight: 300; color: #2c3e50; margin: 15px 0; }
-
+.preview-content-minimalis h1 { font-size: 24px; font-weight: 300; color: #2c3e50; }
 .floral-preview { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,240,245,0.95)) !important; font-family: 'Poppins', sans-serif !important; }
 .preview-cover-floral { display: flex; justify-content: center; align-items: center; min-height: 560px; padding: 15px; }
 .floral-border { border: 3px solid #fbcfe8; border-radius: 25px; padding: 30px 20px; text-align: center; background: white; width: 100%; box-shadow: 0 10px 30px rgba(244,114,182,0.1); }
 .floral-border .cover-icon { font-size: 50px; margin-bottom: 15px; }
-.floral-border h1 { font-size: 24px; color: #831843; margin: 15px 0; line-height: 1.4; font-family: 'Playfair Display', serif; }
-.floral-border .cover-date { font-size: 14px; color: #9d174d; margin-bottom: 25px; }
-.floral-border .cover-guest { font-size: 14px; color: #831843; margin: 20px 0; line-height: 1.8; }
-.floral-border strong { font-size: 20px; display: block; margin-top: 5px; color: #831843; }
+.floral-border h1 { font-size: 24px; color: #831843; margin: 15px 0; font-family: 'Playfair Display', serif; }
+.floral-border .cover-date { font-size: 14px; color: #9d174d; }
+.floral-border .cover-guest { font-size: 14px; color: #831843; margin: 20px 0; }
+.floral-border strong { font-size: 20px; display: block; color: #831843; }
 .floral-btn { background: linear-gradient(135deg, #f472b6, #ec4899) !important; }
 .preview-content-floral { text-align: center; padding: 20px 10px; }
-.preview-content-floral h1 { font-size: 24px; color: #831843; margin: 15px 0; font-family: 'Playfair Display', serif; }
-
+.preview-content-floral h1 { font-size: 24px; color: #831843; font-family: 'Playfair Display', serif; }
 .preview-controls { margin-top: 15px; text-align: center; }
 .preview-label { color: white; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
 .mode-switch { display: flex; gap: 8px; justify-content: center; }
 .mode-switch button { padding: 8px 20px; background: rgba(255,255,255,0.2); border: 1px solid white; color: white; border-radius: 50px; cursor: pointer; font-size: 13px; }
 .mode-switch button.active { background: white; color: #667eea; }
-
 @media (max-width: 768px) { .dashboard { flex-direction: column; } .panel-kiri, .panel-kanan { width: 100%; padding: 15px; } .mockup-hp { width: 300px; height: 580px; } }
 </style>
