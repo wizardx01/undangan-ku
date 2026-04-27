@@ -1,187 +1,39 @@
 <template>
   <div class="wedding-view template-elegan">
     <div class="parallax-bg" :style="bgStyle"></div>
-    
     <div class="floating-elements">
       <span v-for="i in 15" :key="i" class="floating-leaf" :style="{ '--delay': i * 0.4 + 's', '--pos': i * 7 + '%' }">{{ getFloatingEmoji() }}</span>
       <span v-for="i in 10" :key="'leaf-'+i" class="floating-leaf-2" :style="{ '--delay': i * 0.6 + 's', '--pos': i * 9 + '%' }">🍃</span>
     </div>
 
-    <!-- COVER -->
     <div v-if="!isOpen" class="cover-page" :style="coverStyle">
       <div class="cover-content" :class="{ 'tearing': isTearing }">
-        <div class="cover-frame">
-          <div class="cover-decoration">{{ getCoverIcon() }}</div>
-          <h2 class="cover-subtitle">{{ getCoverTitle() }}</h2>
-          <h1 class="cover-title" v-html="getTitle()"></h1>
-          <div class="cover-date">{{ formatDate(props.wedding.akad_date) }}</div>
-          <div class="guest-welcome"><p>Kepada Yth.</p><strong>{{ displayGuestName }}</strong></div>
-          <button class="btn-open" @click="openEnvelope"><span>💌 Buka Undangan</span></button>
-        </div>
+        <div class="cover-frame"><div class="cover-decoration">{{ getCoverIcon() }}</div><h2 class="cover-subtitle">{{ getCoverTitle() }}</h2><h1 class="cover-title" v-html="getTitle()"></h1><div class="cover-date">{{ formatDate(props.wedding.akad_date) }}</div><div class="guest-welcome"><p>Kepada Yth.</p><strong>{{ displayGuestName }}</strong></div><button class="btn-open" @click="openEnvelope"><span>💌 Buka Undangan</span></button></div>
         <button class="music-toggle cover-music" @click="toggleMusic" :class="{ playing: isPlaying }">{{ isPlaying ? '🔊' : '🔇' }}</button>
       </div>
     </div>
 
-    <!-- ISI UNDANGAN -->
-    <div v-else class="main-content">
-      <div class="content-card">
-        <div class="top-actions"><button class="icon-btn" @click="toggleMusic"><span>{{ isPlaying ? '🔊' : '🔈' }}</span></button></div>
+    <div v-else class="main-content"><div class="content-card">
+      <div class="top-actions"><button class="icon-btn" @click="toggleMusic"><span>{{ isPlaying ? '🔊' : '🔈' }}</span></button></div>
+      <div class="hero-section" data-aos="fade-up"><div class="hero-image" v-if="props.theme.gallery && props.theme.gallery.length"><img :src="props.theme.gallery[0]" /><div class="hero-overlay"></div></div><div class="hero-content"><div class="bismillah">﷽</div><p class="hero-text">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri {{ getEventLabel() }}:</p></div></div>
+      <div class="section-names" data-aos="fade-up" data-aos-delay="100"><div class="names-container"><h1 class="wedding-title" v-html="getTitle()"></h1></div><p class="parents-name" v-if="props.wedding.event_type === 'wedding'">Putra dari {{ props.wedding.orangtua_pria || '...' }}<br>&<br>Putri dari {{ props.wedding.orangtua_wanita || '...' }}</p><p class="parents-name" v-else>{{ props.wedding.nama_wanita ? 'Putra dari ' + props.wedding.nama_wanita : '' }}</p></div>
+      <div class="section-quote" data-aos="fade-up" data-aos-delay="200"><div class="quote-box"><p class="arabic">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً</p><p class="translation">"Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang."</p><p class="reference">— Q.S. Ar-Rum: 21</p></div></div>
+      <div class="section-countdown" data-aos="fade-up" data-aos-delay="300"><h3 class="section-title">⏳ Menuju Hari Bahagia</h3><div class="countdown-container" v-if="countdownTarget"><div class="countdown-grid"><div class="countdown-item"><span class="countdown-value">{{ countdown.days }}</span><span class="countdown-label">Hari</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.hours }}</span><span class="countdown-label">Jam</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.minutes }}</span><span class="countdown-label">Menit</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.seconds }}</span><span class="countdown-label">Detik</span></div></div></div></div>
+      <div class="section-guest" data-aos="fade-up" data-aos-delay="400"><p class="guest-intro">Yang terhormat</p><p class="guest-name-display">{{ displayGuestName }}</p><p class="guest-message">Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu</p></div>
+      <div class="section-event" data-aos="fade-up" data-aos-delay="500"><h3 class="section-title">📅 Acara</h3><div class="event-card"><div class="event-header"><div class="event-icon">{{ getEventIcon() }}</div><h4>{{ getEventLabel() }}</h4></div><div class="event-details"><p><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p><p><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p><p><span>📍</span> {{ props.wedding.akad_location }}</p></div><button class="btn-map-small" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button><div class="calendar-section" v-if="props.wedding.akad_date"><add-to-calendar-button :name="getTitleText() + ' - ' + getEventLabel()" :startDate="formatCalendarDate(props.wedding.akad_date)" :startTime="props.wedding.akad_time?.substring(0,5)" :location="props.wedding.akad_location" options="'Google','Apple'" timeZone="Asia/Jakarta" language="id" hideTextLabelButton></add-to-calendar-button></div></div></div>
+      
+      <!-- LOVE STORY (HANYA WEDDING) -->
+      <div class="section-love-story" v-if="props.wedding.event_type === 'wedding' && props.wedding.love_story && props.wedding.love_story.length > 0" data-aos="fade-up" data-aos-delay="550"><h3 class="section-title">💕 Kisah Cinta Kami</h3><div class="timeline"><div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item"><div class="timeline-icon">{{ story.icon || '💕' }}</div><div class="timeline-content"><h4>{{ story.title }}</h4><p class="timeline-date">{{ story.date }}</p><p>{{ story.description }}</p></div></div></div></div>
 
-        <!-- HERO -->
-        <div class="hero-section" data-aos="fade-up">
-          <div class="hero-image" v-if="props.theme.gallery && props.theme.gallery.length"><img :src="props.theme.gallery[0]" alt="Couple" /><div class="hero-overlay"></div></div>
-          <div class="hero-content"><div class="bismillah">﷽</div><p class="hero-text">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri {{ getEventLabel() }}:</p></div>
-        </div>
-
-        <!-- NAMA -->
-        <div class="section-names" data-aos="fade-up" data-aos-delay="100">
-          <div class="names-container"><h1 class="wedding-title" v-html="getTitle()"></h1></div>
-          <p class="parents-name" v-if="props.wedding.event_type === 'wedding'">Putra dari {{ props.wedding.orangtua_pria || '...' }}<br>&<br>Putri dari {{ props.wedding.orangtua_wanita || '...' }}</p>
-          <p class="parents-name" v-else>{{ props.wedding.nama_wanita ? 'Putra dari ' + props.wedding.nama_wanita : '' }}</p>
-        </div>
-
-        <!-- AYAT -->
-        <div class="section-quote" data-aos="fade-up" data-aos-delay="200">
-          <div class="quote-box">
-            <p class="arabic">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً</p>
-            <p class="translation">"Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang."</p>
-            <p class="reference">— Q.S. Ar-Rum: 21</p>
-          </div>
-        </div>
-
-        <!-- COUNTDOWN -->
-        <div class="section-countdown" data-aos="fade-up" data-aos-delay="300">
-          <h3 class="section-title">⏳ Menuju Hari Bahagia</h3>
-          <div class="countdown-container" v-if="countdownTarget">
-            <div class="countdown-grid">
-              <div class="countdown-item"><span class="countdown-value">{{ countdown.days }}</span><span class="countdown-label">Hari</span></div>
-              <div class="countdown-item"><span class="countdown-value">{{ countdown.hours }}</span><span class="countdown-label">Jam</span></div>
-              <div class="countdown-item"><span class="countdown-value">{{ countdown.minutes }}</span><span class="countdown-label">Menit</span></div>
-              <div class="countdown-item"><span class="countdown-value">{{ countdown.seconds }}</span><span class="countdown-label">Detik</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- NAMA TAMU -->
-        <div class="section-guest" data-aos="fade-up" data-aos-delay="400">
-          <p class="guest-intro">Yang terhormat</p>
-          <p class="guest-name-display">{{ displayGuestName }}</p>
-          <p class="guest-message">Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu</p>
-        </div>
-
-        <!-- DETAIL ACARA -->
-        <div class="section-event" data-aos="fade-up" data-aos-delay="500">
-          <h3 class="section-title">📅 Acara</h3>
-          <div class="event-card">
-            <div class="event-header"><div class="event-icon">{{ getEventIcon() }}</div><h4>{{ getEventLabel() }}</h4></div>
-            <div class="event-details">
-              <p><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p>
-              <p><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p>
-              <p><span>📍</span> {{ props.wedding.akad_location }}</p>
-            </div>
-            <button class="btn-map-small" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button>
-            
-            <!-- SAVE TO CALENDAR -->
-            <div class="calendar-section" v-if="props.wedding.akad_date">
-              <add-to-calendar-button
-                :name="getTitleText() + ' - ' + getEventLabel()"
-                :description="'Acara ' + getEventLabel() + ' di ' + props.wedding.akad_location"
-                :startDate="formatCalendarDate(props.wedding.akad_date)"
-                :startTime="props.wedding.akad_time?.substring(0,5)"
-                :endTime="props.wedding.resepsi_time?.substring(0,5) || '23:59'"
-                :location="props.wedding.akad_location"
-                options="'Google','Apple','Outlook.com'"
-                timeZone="Asia/Jakarta"
-                language="id"
-                buttonsList
-                hideTextLabelButton
-              ></add-to-calendar-button>
-            </div>
-          </div>
-        </div>
-
-        <!-- KISAH CINTA -->
-        <div class="section-love-story" v-if="props.wedding.love_story && props.wedding.love_story.length > 0" data-aos="fade-up" data-aos-delay="550">
-          <h3 class="section-title">💕 Kisah Cinta Kami</h3>
-          <div class="timeline">
-            <div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item">
-              <div class="timeline-icon">{{ story.icon || '💕' }}</div>
-              <div class="timeline-content">
-                <h4>{{ story.title }}</h4>
-                <p class="timeline-date">{{ story.date }}</p>
-                <p>{{ story.description }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- GALLERY -->
-        <div class="section-gallery" data-aos="fade-up" data-aos-delay="600" v-if="props.theme.gallery && props.theme.gallery.length">
-          <h3 class="section-title">📸 Galeri Kenangan</h3>
-          <swiper :modules="modules" :slides-per-view="1" :space-between="15" :pagination="{ clickable: true }" :autoplay="{ delay: 3000 }" loop class="gallery-swiper">
-            <swiper-slide v-for="(img, i) in props.theme.gallery" :key="i"><div class="gallery-slide" @click="openLightbox(i)"><img :src="img" /></div></swiper-slide>
-          </swiper>
-        </div>
-
-        <!-- GIFT REGISTRY -->
-        <div class="section-gifts" data-aos="fade-up" data-aos-delay="800" v-if="gifts.length > 0">
-          <h3 class="section-title">🎁 Kirim Kado</h3>
-          <div class="gift-grid">
-            <div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }">
-              <div class="gift-card-image" v-if="gift.image"><img :src="gift.image" /></div>
-              <div class="gift-card-content"><h4>{{ gift.name }}</h4><p class="gift-price">Rp {{ formatNumber(gift.price) }}</p>
-                <p class="gift-status-badge" v-if="gift.status">✅ Sudah Dibeli</p>
-                <a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a>
-              </div>
-              <div v-if="props.guestSlug && !gift.status" class="resi-form"><input v-model="gift.resiInput" placeholder="Nomor Resi" /><button @click="claimGift(gift)" :disabled="gift.claiming">{{ gift.claiming ? '...' : 'Klaim' }}</button></div>
-              <div v-if="gift.buyer_name" class="gift-buyer-info">Dibeli oleh: {{ gift.buyer_name }}<span v-if="gift.resi">({{ gift.resi }})</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AMPLOP DIGITAL -->
-        <div class="section-gift" data-aos="fade-up" data-aos-delay="900" v-if="props.wedding.rekening">
-          <h3 class="section-title">💝 Amplop Digital</h3>
-          <div class="rekening-list"><div class="rekening-item"><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening" :class="{ shaking: isShaking }"><span>📋</span> Salin</button></div></div>
-        </div>
-
-        <!-- RSVP -->
-        <div class="section-rsvp" data-aos="fade-up" data-aos-delay="1000">
-          <h3 class="section-title">📝 Konfirmasi Kehadiran</h3>
-          <div class="rsvp-buttons">
-            <button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }"><span>✅</span> Hadir</button>
-            <button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }"><span>❌</span> Tidak Hadir</button>
-          </div>
-          <div v-if="rsvpStatus === true" class="rsvp-guest-count"><label>Jumlah Orang</label><input type="number" v-model="jumlahOrang" min="1" max="10" /></div>
-          <button @click="submitRsvp" class="btn-rsvp" :disabled="submitting">{{ submitting ? 'Mengirim...' : 'Kirim Konfirmasi' }}</button>
-          <div class="floating-hearts" v-if="showHearts"><span v-for="i in 15" :key="i" class="heart" :style="{ '--i': i }">❤️</span></div>
-        </div>
-
-        <!-- PESAN & DOA -->
-        <div class="section-messages" data-aos="fade-up" data-aos-delay="1100">
-          <h3 class="section-title">💬 Ucapan & Doa</h3>
-          <div class="message-list"><div v-for="msg in messages" :key="msg.id" class="message-item"><div class="message-header"><strong>{{ msg.nama_pengirim }}</strong><small>{{ formatMessageTime(msg.created_at) }}</small></div><p>{{ msg.pesan }}</p></div><div v-if="messages.length === 0" class="message-empty">💭 Belum ada ucapan.</div></div>
-          <div class="message-form"><input v-model="newMessage.nama" placeholder="Nama Anda" /><textarea v-model="newMessage.pesan" placeholder="Tulis doa atau ucapan..." rows="3"></textarea><button @click="sendMessage" :disabled="sendingMessage"><span>📨</span> Kirim Doa</button></div>
-        </div>
-
-        <!-- IG STORY TEMPLATE -->
-        <IGStoryTemplate 
-          :wedding-name="getTitleText()" 
-          :akad-date="props.wedding.akad_date"
-          :event-type="eventType"
-          :image-url="props.theme.gallery?.[0]"
-        />
-
-        <!-- CLOSING -->
-        <div class="section-closing" data-aos="fade-up" data-aos-delay="1200">
-          <div class="closing-decoration">✨</div>
-          <p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu.</p>
-          <p class="closing-signature">Wassalamu'alaikum Wr. Wb.</p>
-          <div class="virtual-signature">{{ getTitleText() }}</div>
-          <p class="copyright">© {{ new Date().getFullYear() }} UndanganKu • Made with ❤️</p>
-        </div>
-      </div>
-    </div>
+      <div class="section-gallery" data-aos="fade-up" data-aos-delay="600" v-if="props.theme.gallery && props.theme.gallery.length"><h3 class="section-title">📸 Galeri Kenangan</h3><swiper :modules="modules" :slides-per-view="1" :space-between="15" :pagination="{ clickable: true }" :autoplay="{ delay: 3000 }" loop class="gallery-swiper"><swiper-slide v-for="(img, i) in props.theme.gallery" :key="i"><div class="gallery-slide" @click="openLightbox(i)"><img :src="img" /></div></swiper-slide></swiper></div>
+      <div class="section-gifts" data-aos="fade-up" data-aos-delay="800" v-if="gifts.length > 0"><h3 class="section-title">🎁 Kirim Kado</h3><div class="gift-grid"><div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }"><div class="gift-card-image" v-if="gift.image"><img :src="gift.image" /></div><div class="gift-card-content"><h4>{{ gift.name }}</h4><p class="gift-price">Rp {{ formatNumber(gift.price) }}</p><p class="gift-status-badge" v-if="gift.status">✅ Sudah Dibeli</p><a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a></div><div v-if="props.guestSlug && !gift.status" class="resi-form"><input v-model="gift.resiInput" placeholder="Nomor Resi" /><button @click="claimGift(gift)" :disabled="gift.claiming">{{ gift.claiming ? '...' : 'Klaim' }}</button></div><div v-if="gift.buyer_name" class="gift-buyer-info">Dibeli oleh: {{ gift.buyer_name }}<span v-if="gift.resi">({{ gift.resi }})</span></div></div></div></div>
+      <div class="section-gift" data-aos="fade-up" data-aos-delay="900" v-if="props.wedding.rekening"><h3 class="section-title">💝 Amplop Digital</h3><div class="rekening-list"><div class="rekening-item"><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening" :class="{ shaking: isShaking }"><span>📋</span> Salin</button></div></div></div>
+      <div class="section-rsvp" data-aos="fade-up" data-aos-delay="1000"><h3 class="section-title">📝 Konfirmasi Kehadiran</h3><div class="rsvp-buttons"><button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }"><span>✅</span> Hadir</button><button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }"><span>❌</span> Tidak Hadir</button></div><div v-if="rsvpStatus === true" class="rsvp-guest-count"><label>Jumlah Orang</label><input type="number" v-model="jumlahOrang" min="1" max="10" /></div><button @click="submitRsvp" class="btn-rsvp" :disabled="submitting">{{ submitting ? 'Mengirim...' : 'Kirim Konfirmasi' }}</button><div class="floating-hearts" v-if="showHearts"><span v-for="i in 15" :key="i" class="heart" :style="{ '--i': i }">❤️</span></div></div>
+      <div class="section-messages" data-aos="fade-up" data-aos-delay="1100"><h3 class="section-title">💬 Ucapan & Doa</h3><div class="message-list"><div v-for="msg in messages" :key="msg.id" class="message-item"><div class="message-header"><strong>{{ msg.nama_pengirim }}</strong><small>{{ formatMessageTime(msg.created_at) }}</small></div><p>{{ msg.pesan }}</p></div><div v-if="messages.length === 0" class="message-empty">💭 Belum ada ucapan.</div></div><div class="message-form"><input v-model="newMessage.nama" placeholder="Nama Anda" /><textarea v-model="newMessage.pesan" placeholder="Tulis doa atau ucapan..." rows="3"></textarea><button @click="sendMessage" :disabled="sendingMessage"><span>📨</span> Kirim Doa</button></div></div>
+      <IGStoryTemplate :wedding-name="getTitleText()" :akad-date="props.wedding.akad_date" :event-type="eventType" :image-url="props.theme.gallery?.[0]" />
+      <div class="qr-section" v-if="props.wedding.slug"><h4>📱 QR Code Check-in</h4><canvas ref="qrCanvas"></canvas><p>Scan QR ini untuk check-in</p></div>
+      <div class="section-closing" data-aos="fade-up" data-aos-delay="1200"><div class="closing-decoration">✨</div><p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu.</p><p class="closing-signature">Wassalamu'alaikum Wr. Wb.</p><div class="virtual-signature">{{ getTitleText() }}</div><p class="copyright">© {{ new Date().getFullYear() }} UndanganKu • Made with ❤️</p></div>
+    </div></div>
 
     <div v-if="lightboxOpen" class="lightbox" @click="lightboxOpen = false"><img :src="props.theme.gallery[lightboxIndex]" /><button class="close-lightbox">✕</button></div>
     <audio ref="bgMusic" loop><source :src="musicUrl" type="audio/mpeg"></audio>
@@ -190,80 +42,45 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { supabase } from '../../lib/supabase'
-import confetti from 'canvas-confetti'
-import AOS from 'aos'
-import 'aos/dist/aos.css'
-import { Swiper, SwiperSlide } from 'swiper/vue'
-import { Pagination, Autoplay } from 'swiper/modules'
-import 'swiper/css'
-import 'swiper/css/pagination'
-import { updateMetaTags } from '../../utils/seo'
-import { showError, showSuccess } from '../../utils/errorHandler'
-import 'add-to-calendar-button'
-import IGStoryTemplate from '../../components/IGStoryTemplate.vue'
-
+import { supabase } from '../../lib/supabase'; import confetti from 'canvas-confetti'; import AOS from 'aos'; import 'aos/dist/aos.css'
+import { Swiper, SwiperSlide } from 'swiper/vue'; import { Pagination, Autoplay } from 'swiper/modules'; import 'swiper/css'; import 'swiper/css/pagination'
+import { updateMetaTags } from '../../utils/seo'; import { showError, showSuccess } from '../../utils/errorHandler'
+import 'add-to-calendar-button'; import QRCode from 'qrcode'; import IGStoryTemplate from '../../components/IGStoryTemplate.vue'
 const modules = [Pagination, Autoplay]
 const props = defineProps({ wedding: Object, theme: Object, guestName: String, guestSlug: String })
-
 const isOpen = ref(false); const isTearing = ref(false); const isPlaying = ref(false); const bgMusic = ref(null)
 const messages = ref([]); const gifts = ref([]); const rsvpStatus = ref(null); const jumlahOrang = ref(1)
 const submitting = ref(false); const sendingMessage = ref(false); const isShaking = ref(false)
 const showHearts = ref(false); const lightboxOpen = ref(false); const lightboxIndex = ref(0)
-const newMessage = reactive({ nama: '', pesan: '' })
-const countdown = reactive({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-let countdownInterval = null
-
-const eventType = computed(() => props.wedding.event_type || 'wedding')
-const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
+const newMessage = reactive({ nama: '', pesan: '' }); const countdown = reactive({ days: 0, hours: 0, minutes: 0, seconds: 0 }); let countdownInterval = null
+const qrCanvas = ref(null)
+const eventType = computed(() => props.wedding.event_type || 'wedding'); const displayGuestName = computed(() => props.guestName || 'Bapak/Ibu/Saudara/i')
 const bgStyle = computed(() => ({ backgroundImage: props.theme.background_type === 'image' ? `url(${props.theme.background_value})` : 'none', backgroundColor: props.theme.background_type === 'solid' ? props.theme.background_value : 'transparent' }))
-const coverStyle = computed(() => ({ '--primary': props.theme.primary_color || '#9b87f5', fontFamily: props.theme.font_family || 'Poppins, sans-serif' }))
-const musicUrl = computed(() => props.theme.music_url || '')
-
-const countdownTarget = computed(() => {
-  if (!props.wedding) return null
-  if (props.wedding.akad_date && props.wedding.akad_time) {
-    const dt = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`)
-    if (!isNaN(dt.getTime())) return { timestamp: dt.getTime() }
-  }
-  return null
-})
-
+const coverStyle = computed(() => ({ '--primary': props.theme.primary_color || '#9b87f5', fontFamily: props.theme.font_family || 'Poppins, sans-serif' })); const musicUrl = computed(() => props.theme.music_url || '')
+const countdownTarget = computed(() => { if (!props.wedding?.akad_date) return null; const dt = new Date(`${props.wedding.akad_date}T${props.wedding.akad_time}`); return isNaN(dt.getTime()) ? null : { timestamp: dt.getTime() } })
 const getEventIcon = () => ({ wedding: '💍', sunatan: '✂️', aqiqah: '👶', syukuran: '🏠' }[eventType.value] || '💍')
 const getFloatingEmoji = () => ({ wedding: '🌸', sunatan: '⭐', aqiqah: '🍼', syukuran: '🏡' }[eventType.value] || '🌸')
 const getCoverTitle = () => ({ wedding: 'The Wedding Of', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Acara')
 const getCoverIcon = () => ({ wedding: '💐', sunatan: '🕌', aqiqah: '🍼', syukuran: '🏠' }[eventType.value] || '💐')
 const getEventLabel = () => ({ wedding: 'Pernikahan', sunatan: 'Khitanan', aqiqah: 'Aqiqah', syukuran: 'Syukuran' }[eventType.value] || 'Pernikahan')
-const getTitle = () => {
-  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}`
-  return props.wedding.nama_pria || '...'
-}
-const getTitleText = () => {
-  if (eventType.value === 'wedding') return `${props.wedding.nama_pria || ''} & ${props.wedding.nama_wanita || ''}`
-  return props.wedding.nama_pria || ''
-}
-
+const getTitle = () => eventType.value === 'wedding' ? `${props.wedding.nama_pria || '...'}<br>&<br>${props.wedding.nama_wanita || '...'}` : props.wedding.nama_pria || '...'
+const getTitleText = () => eventType.value === 'wedding' ? `${props.wedding.nama_pria || ''} & ${props.wedding.nama_wanita || ''}` : props.wedding.nama_pria || ''
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''
-const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''
-const formatMessageTime = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'
-const formatCalendarDate = (d) => d ? d.replace(/-/g, '') : ''
-
+const formatTime = (t) => t ? t.substring(0, 5) + ' WIB' : ''; const formatMessageTime = (ts) => new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '-'; const formatCalendarDate = (d) => d ? d.replace(/-/g, '') : ''
 const updateCountdown = () => { if (!countdownTarget.value) return; const diff = countdownTarget.value.timestamp - Date.now(); if (diff <= 0) { countdown.days = countdown.hours = countdown.minutes = countdown.seconds = 0; return } countdown.days = Math.floor(diff / 86400000); countdown.hours = Math.floor((diff % 86400000) / 3600000); countdown.minutes = Math.floor((diff % 3600000) / 60000); countdown.seconds = Math.floor((diff % 60000) / 1000) }
-
 const openEnvelope = async () => { isTearing.value = true; setTimeout(() => { isOpen.value = true; confetti({ particleCount: 200, spread: 100 }) }, 400); await nextTick(); AOS.refresh(); if (bgMusic.value) { try { await bgMusic.value.play(); isPlaying.value = true } catch {} } }
 const toggleMusic = () => { if (!bgMusic.value) return; isPlaying.value ? bgMusic.value.pause() : bgMusic.value.play(); isPlaying.value = !isPlaying.value }
 const openMaps = (loc) => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}`, '_blank')
 const openLightbox = (i) => { lightboxIndex.value = i; lightboxOpen.value = true }
 const copyRekening = async () => { try { await navigator.clipboard.writeText(props.wedding.rekening); isShaking.value = true; setTimeout(() => isShaking.value = false, 500); showSuccess('Disalin!') } catch { showError(null, 'Gagal') } }
-
 const loadMessages = async () => { const { data } = await supabase.from('messages').select('*').eq('wedding_id', props.wedding.id).order('created_at', { ascending: false }).limit(30); messages.value = data || [] }
 const loadGifts = async () => { const { data } = await supabase.from('gifts').select('*, dibeli_oleh(nama_tamu)').eq('wedding_id', props.wedding.id); gifts.value = (data || []).map(g => ({ ...g, name: g.nama_barang, price: g.harga_estimasi, link: g.link_produk, image: g.gambar_url, buyer_name: g.dibeli_oleh?.nama_tamu, resiInput: '', claiming: false })) }
 const sendMessage = async () => { if (!newMessage.nama || !newMessage.pesan) return showError(null, 'Isi'); sendingMessage.value = true; try { await supabase.from('messages').insert([{ wedding_id: props.wedding.id, nama_pengirim: newMessage.nama, pesan: newMessage.pesan }]); newMessage.nama = newMessage.pesan = ''; await loadMessages(); showSuccess('Terkirim!') } catch { showError(null, 'Gagal') } finally { sendingMessage.value = false } }
 const submitRsvp = async () => { if (!props.guestSlug) return showError(null, 'Link tidak valid'); submitting.value = true; try { await supabase.from('guests').update({ status_hadir: rsvpStatus.value, jumlah_orang: rsvpStatus.value ? jumlahOrang.value : 0 }).eq('unique_slug', props.guestSlug); showSuccess('Terima kasih!'); if (rsvpStatus.value) { showHearts.value = true; setTimeout(() => showHearts.value = false, 2500) } } catch { showError(null, 'Gagal') } finally { submitting.value = false } }
 const claimGift = async (gift) => { if (!gift.resiInput) return showError(null, 'Masukkan resi'); gift.claiming = true; try { const { data: guest } = await supabase.from('guests').select('id').eq('unique_slug', props.guestSlug).single(); await supabase.from('gifts').update({ dibeli_oleh: guest.id, nomor_resi: gift.resiInput, status: true }).eq('id', gift.id); gift.status = true; gift.buyer_name = props.guestName; gift.resi = gift.resiInput; showSuccess('Diklaim!') } catch { showError(null, 'Gagal') } finally { gift.claiming = false } }
-
-onMounted(async () => { await loadMessages(); await loadGifts(); updateMetaTags({ title: `${getTitleText()} - ${getEventLabel()}`, image: props.theme.gallery?.[0] || '/og-image.jpg' }); AOS.init({ once: false, offset: 50 }); updateCountdown(); countdownInterval = setInterval(updateCountdown, 1000) })
+const generateQR = async () => { if (!qrCanvas.value || !props.wedding?.slug) return; try { await QRCode.toCanvas(qrCanvas.value, `${window.location.origin}/wedding/${props.wedding.slug}`, { width: 180, margin: 2 }) } catch {} }
+onMounted(async () => { await loadMessages(); await loadGifts(); updateMetaTags({ title: `${getTitleText()} - ${getEventLabel()}`, image: props.theme.gallery?.[0] }); AOS.init({ once: false, offset: 50 }); updateCountdown(); countdownInterval = setInterval(updateCountdown, 1000); setTimeout(generateQR, 500) })
 onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 </script>
 
@@ -316,11 +133,7 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .event-card h4 { font-size: 20px; color: #2c3e50; }
 .event-details p { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .btn-map-small { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 50px; margin-top: 15px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
-
-/* CALENDAR */
 .calendar-section { margin-top: 20px; text-align: center; }
-
-/* LOVE STORY */
 .section-love-story { margin: 40px 0; }
 .timeline { position: relative; padding-left: 30px; border-left: 2px solid #e0e0e0; }
 .timeline-item { display: flex; gap: 15px; margin-bottom: 25px; position: relative; }
@@ -328,7 +141,6 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .timeline-content { flex: 1; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
 .timeline-content h4 { margin-bottom: 5px; }
 .timeline-date { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
-
 .section-gallery { margin: 50px 0; }
 .gallery-swiper { border-radius: 30px; }
 .gallery-slide img { width: 100%; height: 350px; object-fit: cover; cursor: pointer; border-radius: 25px; }
@@ -361,6 +173,10 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .message-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
 .message-form input, .message-form textarea { width: 100%; padding: 16px; border: 2px solid #eee; border-radius: 20px; margin-bottom: 15px; background: white; font-size: 15px; }
 .message-form button { background: #9b87f5; color: white; border: none; padding: 16px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.qr-section { text-align: center; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 20px; }
+.qr-section h4 { margin-bottom: 15px; }
+.qr-section canvas { border-radius: 10px; }
+.qr-section p { margin-top: 10px; font-size: 13px; color: #666; }
 .section-closing { text-align: center; margin-top: 60px; }
 .closing-text { font-size: 15px; line-height: 2; margin-bottom: 25px; }
 .closing-signature { font-size: 18px; font-weight: 600; margin-bottom: 30px; }
