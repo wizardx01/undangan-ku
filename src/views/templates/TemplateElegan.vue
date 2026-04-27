@@ -15,24 +15,51 @@
 
     <div v-else class="main-content"><div class="content-card">
       <div class="top-actions"><button class="icon-btn" @click="toggleMusic"><span>{{ isPlaying ? '🔊' : '🔈' }}</span></button></div>
+      
+      <!-- HERO -->
       <div class="hero-section" data-aos="fade-up"><div class="hero-image" v-if="props.theme.gallery && props.theme.gallery.length"><img :src="props.theme.gallery[0]" /><div class="hero-overlay"></div></div><div class="hero-content"><div class="bismillah">﷽</div><p class="hero-text">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri {{ getEventLabel() }}:</p></div></div>
+      
+      <!-- NAMA -->
       <div class="section-names" data-aos="fade-up" data-aos-delay="100"><div class="names-container"><h1 class="wedding-title" v-html="getTitle()"></h1></div><p class="parents-name" v-if="props.wedding.event_type === 'wedding'">Putra dari {{ props.wedding.orangtua_pria || '...' }}<br>&<br>Putri dari {{ props.wedding.orangtua_wanita || '...' }}</p><p class="parents-name" v-else>{{ props.wedding.nama_wanita ? 'Putra dari ' + props.wedding.nama_wanita : '' }}</p></div>
+      
+      <!-- AYAT -->
       <div class="section-quote" data-aos="fade-up" data-aos-delay="200"><div class="quote-box"><p class="arabic">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُم مِّنْ أَنفُسِكُمْ أَزْوَاجًا لِّتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُم مَّوَدَّةً وَرَحْمَةً</p><p class="translation">"Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang."</p><p class="reference">— Q.S. Ar-Rum: 21</p></div></div>
+      
+      <!-- COUNTDOWN -->
       <div class="section-countdown" data-aos="fade-up" data-aos-delay="300"><h3 class="section-title">⏳ Menuju Hari Bahagia</h3><div class="countdown-container" v-if="countdownTarget"><div class="countdown-grid"><div class="countdown-item"><span class="countdown-value">{{ countdown.days }}</span><span class="countdown-label">Hari</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.hours }}</span><span class="countdown-label">Jam</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.minutes }}</span><span class="countdown-label">Menit</span></div><div class="countdown-item"><span class="countdown-value">{{ countdown.seconds }}</span><span class="countdown-label">Detik</span></div></div></div></div>
+      
+      <!-- NAMA TAMU -->
       <div class="section-guest" data-aos="fade-up" data-aos-delay="400"><p class="guest-intro">Yang terhormat</p><p class="guest-name-display">{{ displayGuestName }}</p><p class="guest-message">Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu</p></div>
+      
+      <!-- DETAIL ACARA -->
       <div class="section-event" data-aos="fade-up" data-aos-delay="500"><h3 class="section-title">📅 Acara</h3><div class="event-card"><div class="event-header"><div class="event-icon">{{ getEventIcon() }}</div><h4>{{ getEventLabel() }}</h4></div><div class="event-details"><p><span>📆</span> {{ formatDate(props.wedding.akad_date) }}</p><p><span>🕐</span> {{ formatTime(props.wedding.akad_time) }}</p><p><span>📍</span> {{ props.wedding.akad_location }}</p></div><button class="btn-map-small" @click="openMaps(props.wedding.akad_location)">🗺️ Buka Google Maps</button><div class="calendar-section" v-if="props.wedding.akad_date"><add-to-calendar-button :name="getTitleText() + ' - ' + getEventLabel()" :startDate="formatCalendarDate(props.wedding.akad_date)" :startTime="props.wedding.akad_time?.substring(0,5)" :location="props.wedding.akad_location" options="'Google','Apple'" timeZone="Asia/Jakarta" language="id" hideTextLabelButton></add-to-calendar-button></div></div></div>
       
       <!-- LOVE STORY (HANYA WEDDING) -->
-      <div class="section-love-story" v-if="props.wedding.event_type === 'wedding' && props.wedding.love_story && props.wedding.love_story.length > 0" data-aos="fade-up" data-aos-delay="550"><h3 class="section-title">💕 Kisah Cinta Kami</h3><div class="timeline"><div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item"><div class="timeline-icon">{{ story.icon || '💕' }}</div><div class="timeline-content"><h4>{{ story.title }}</h4><p class="timeline-date">{{ story.date }}</p><p>{{ story.description }}</p></div></div></div></div>
+      <div class="section-love-story" v-if="props.wedding.event_type === 'wedding' && props.wedding.love_story && props.wedding.love_story.length > 0" data-aos="fade-up" data-aos-delay="550"><h3 class="section-title">💕 Kisah Cinta Kami</h3><div class="timeline"><div v-for="(story, idx) in props.wedding.love_story" :key="idx" class="timeline-item"><div class="timeline-icon">{{ story.icon || '💕' }}</div><div class="timeline-content"><h4>{{ story.title }}</h4><p class="timeline-date">{{ story.date }}</p><p>{{ story.description }}</p><img v-if="story.photo" :src="story.photo" class="story-photo" /></div></div></div></div>
 
+      <!-- GALLERY -->
       <div class="section-gallery" data-aos="fade-up" data-aos-delay="600" v-if="props.theme.gallery && props.theme.gallery.length"><h3 class="section-title">📸 Galeri Kenangan</h3><swiper :modules="modules" :slides-per-view="1" :space-between="15" :pagination="{ clickable: true }" :autoplay="{ delay: 3000 }" loop class="gallery-swiper"><swiper-slide v-for="(img, i) in props.theme.gallery" :key="i"><div class="gallery-slide" @click="openLightbox(i)"><img :src="img" /></div></swiper-slide></swiper></div>
+      
+      <!-- GIFT REGISTRY -->
       <div class="section-gifts" data-aos="fade-up" data-aos-delay="800" v-if="gifts.length > 0"><h3 class="section-title">🎁 Kirim Kado</h3><div class="gift-grid"><div v-for="gift in gifts" :key="gift.id" class="gift-card" :class="{ dibeli: gift.status }"><div class="gift-card-image" v-if="gift.image"><img :src="gift.image" /></div><div class="gift-card-content"><h4>{{ gift.name }}</h4><p class="gift-price">Rp {{ formatNumber(gift.price) }}</p><p class="gift-status-badge" v-if="gift.status">✅ Sudah Dibeli</p><a v-else :href="gift.link" target="_blank" class="btn-buy">🛒 Beli Sekarang</a></div><div v-if="props.guestSlug && !gift.status" class="resi-form"><input v-model="gift.resiInput" placeholder="Nomor Resi" /><button @click="claimGift(gift)" :disabled="gift.claiming">{{ gift.claiming ? '...' : 'Klaim' }}</button></div><div v-if="gift.buyer_name" class="gift-buyer-info">Dibeli oleh: {{ gift.buyer_name }}<span v-if="gift.resi">({{ gift.resi }})</span></div></div></div></div>
+      
+      <!-- AMPLOP -->
       <div class="section-gift" data-aos="fade-up" data-aos-delay="900" v-if="props.wedding.rekening"><h3 class="section-title">💝 Amplop Digital</h3><div class="rekening-list"><div class="rekening-item"><pre>{{ props.wedding.rekening }}</pre><button @click="copyRekening" :class="{ shaking: isShaking }"><span>📋</span> Salin</button></div></div></div>
-      <div class="section-rsvp" data-aos="fade-up" data-aos-delay="1000"><h3 class="section-title">📝 Konfirmasi Kehadiran</h3><div class="rsvp-buttons"><button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }"><span>✅</span> Hadir</button><button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }"><span>❌</span> Tidak Hadir</button></div><div v-if="rsvpStatus === true" class="rsvp-guest-count"><label>Jumlah Orang</label><input type="number" v-model="jumlahOrang" min="1" max="10" /></div><button @click="submitRsvp" class="btn-rsvp" :disabled="submitting">{{ submitting ? 'Mengirim...' : 'Kirim Konfirmasi' }}</button><div class="floating-hearts" v-if="showHearts"><span v-for="i in 15" :key="i" class="heart" :style="{ '--i': i }">❤️</span></div></div>
-      <div class="section-messages" data-aos="fade-up" data-aos-delay="1100"><h3 class="section-title">💬 Ucapan & Doa</h3><div class="message-list"><div v-for="msg in messages" :key="msg.id" class="message-item"><div class="message-header"><strong>{{ msg.nama_pengirim }}</strong><small>{{ formatMessageTime(msg.created_at) }}</small></div><p>{{ msg.pesan }}</p></div><div v-if="messages.length === 0" class="message-empty">💭 Belum ada ucapan.</div></div><div class="message-form"><input v-model="newMessage.nama" placeholder="Nama Anda" /><textarea v-model="newMessage.pesan" placeholder="Tulis doa atau ucapan..." rows="3"></textarea><button @click="sendMessage" :disabled="sendingMessage"><span>📨</span> Kirim Doa</button></div></div>
+      
+      <!-- RSVP -->
+      <div class="section-rsvp" data-aos="fade-up" data-aos-delay="1000"><h3 class="section-title">📝 Konfirmasi Kehadiran</h3><div class="rsvp-buttons"><button @click="rsvpStatus = true" :class="{ active: rsvpStatus === true }"><span>✅</span> Hadir</button><button @click="rsvpStatus = false" :class="{ active: rsvpStatus === false }"><span>❌</span> Tidak Hadir</button></div><div v-if="rsvpStatus === true" class="rsvp-guest-count"><label>Jumlah Orang</label><input type="number" v-model="jumlahOrang" min="1" max="10" /></div><button @click="submitRsvp" class="btn-rsvp" :disabled="submitting">{{ submitting ? 'Mengirim...' : 'Kirim Konfirmasi' }}</button></div>
+      
+      <!-- PESAN -->
+      <div class="section-messages" data-aos="fade-up" data-aos-delay="1100"><h3 class="section-title">💬 Ucapan & Doa</h3><div class="message-list"><div v-for="msg in messages" :key="msg.id" class="message-item"><div class="message-header"><strong>{{ msg.nama_pengirim }}</strong><small>{{ formatMessageTime(msg.created_at) }}</small></div><p>{{ msg.pesan }}</p></div></div><div class="message-form"><input v-model="newMessage.nama" placeholder="Nama Anda" /><textarea v-model="newMessage.pesan" placeholder="Tulis doa..." rows="2"></textarea><button @click="sendMessage" :disabled="sendingMessage"><span>📨</span> Kirim Doa</button></div></div>
+      
+      <!-- IG STORY -->
       <IGStoryTemplate :wedding-name="getTitleText()" :akad-date="props.wedding.akad_date" :event-type="eventType" :image-url="props.theme.gallery?.[0]" />
-      <div class="qr-section" v-if="props.wedding.slug"><h4>📱 QR Code Check-in</h4><canvas ref="qrCanvas"></canvas><p>Scan QR ini untuk check-in</p></div>
-      <div class="section-closing" data-aos="fade-up" data-aos-delay="1200"><div class="closing-decoration">✨</div><p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i untuk memberikan doa restu.</p><p class="closing-signature">Wassalamu'alaikum Wr. Wb.</p><div class="virtual-signature">{{ getTitleText() }}</div><p class="copyright">© {{ new Date().getFullYear() }} UndanganKu • Made with ❤️</p></div>
+      
+      <!-- QR CODE -->
+      <div class="qr-section" v-if="props.wedding.slug" data-aos="fade-up"><h4>📱 QR Code Check-in</h4><canvas ref="qrCanvas"></canvas><p>Scan QR ini untuk check-in</p></div>
+      
+      <!-- CLOSING -->
+      <div class="section-closing" data-aos="fade-up" data-aos-delay="1200"><p class="closing-text">Merupakan suatu kehormatan dan kebahagiaan bagi kami atas kehadiran Bapak/Ibu/Saudara/i.</p><p class="closing-signature">Wassalamu'alaikum Wr. Wb.</p><div class="virtual-signature">{{ getTitleText() }}</div><p class="copyright">© {{ new Date().getFullYear() }} UndanganKu</p></div>
     </div></div>
 
     <div v-if="lightboxOpen" class="lightbox" @click="lightboxOpen = false"><img :src="props.theme.gallery[lightboxIndex]" /><button class="close-lightbox">✕</button></div>
@@ -97,7 +124,7 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .cover-content { text-align: center; max-width: 480px; padding: 40px 30px; background: white; border-radius: 80px 20px 80px 20px; box-shadow: 0 40px 80px rgba(0,0,0,0.08); }
 .cover-decoration { font-size: 50px; margin-bottom: 15px; }
 .cover-subtitle { font-size: 14px; letter-spacing: 6px; opacity: 0.6; text-transform: uppercase; }
-.cover-title { font-size: 42px; margin: 25px 0; font-family: 'Playfair Display', serif; line-height: 1.2; color: #2c3e50; }
+.cover-title { font-size: 42px; margin: 25px 0; font-family: 'Playfair Display', serif; line-height: 1.2; }
 .cover-date { font-size: 18px; margin-bottom: 35px; opacity: 0.8; }
 .guest-welcome { margin: 35px 0 25px; font-size: 16px; }
 .guest-welcome strong { font-size: 26px; display: block; margin-top: 10px; font-family: 'Playfair Display', serif; color: #9b87f5; }
@@ -112,7 +139,7 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)); }
 .hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 25px; color: white; text-align: center; }
 .hero-content .bismillah { font-size: 40px; margin-bottom: 15px; opacity: 0.9; }
-.hero-text { font-size: 14px; line-height: 1.8; }
+.hero-text { font-size: 14px; line-height: 1.8; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 .section-title { font-size: 22px; margin-bottom: 25px; color: #2c3e50; font-weight: 600; text-align: center; }
 .section-title::after { content: ''; display: block; width: 50px; height: 3px; background: #9b87f5; margin: 15px auto 0; border-radius: 3px; }
 .section-names { text-align: center; margin: 40px 0; }
@@ -133,7 +160,8 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .event-card h4 { font-size: 20px; color: #2c3e50; }
 .event-details p { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .btn-map-small { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 50px; margin-top: 15px; cursor: pointer; font-size: 15px; width: 100%; font-weight: 600; }
-.calendar-section { margin-top: 20px; text-align: center; }
+.calendar-section { margin-top: 15px; text-align: center; }
+/* LOVE STORY */
 .section-love-story { margin: 40px 0; }
 .timeline { position: relative; padding-left: 30px; border-left: 2px solid #e0e0e0; }
 .timeline-item { display: flex; gap: 15px; margin-bottom: 25px; position: relative; }
@@ -141,6 +169,7 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .timeline-content { flex: 1; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
 .timeline-content h4 { margin-bottom: 5px; }
 .timeline-date { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+.story-photo { width: 100%; max-height: 150px; object-fit: cover; border-radius: 10px; margin-top: 8px; }
 .section-gallery { margin: 50px 0; }
 .gallery-swiper { border-radius: 30px; }
 .gallery-slide img { width: 100%; height: 350px; object-fit: cover; cursor: pointer; border-radius: 25px; }
@@ -161,18 +190,15 @@ onUnmounted(() => { if (countdownInterval) clearInterval(countdownInterval) })
 .rekening-item button { background: #9b87f5; color: white; border: none; padding: 14px 20px; border-radius: 40px; cursor: pointer; }
 .section-rsvp { margin: 50px 0; text-align: center; }
 .rsvp-buttons { display: flex; gap: 15px; margin: 25px 0; }
-.rsvp-buttons button { flex: 1; padding: 18px; border: 2px solid #ddd; background: white; border-radius: 60px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; }
+.rsvp-buttons button { flex: 1; padding: 18px; border: 2px solid #ddd; background: white; border-radius: 60px; font-weight: 600; cursor: pointer; }
 .rsvp-buttons button.active { background: #9b87f5; color: white; border-color: #9b87f5; }
 .btn-rsvp { background: #9b87f5; color: white; border: none; padding: 18px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; }
-.floating-hearts { position: relative; height: 50px; }
-.heart { position: absolute; bottom: 0; left: 50%; font-size: 24px; animation: flyUp 2.5s ease-out forwards; animation-delay: calc(var(--i) * 0.1s); opacity: 0; }
-@keyframes flyUp { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(calc(-50% + var(--i) * 30px - 70px), -150px) scale(0); opacity: 0; } }
 .section-messages { margin: 50px 0; }
 .message-list { max-height: 300px; overflow-y: auto; margin-bottom: 25px; }
-.message-item { background: white; padding: 18px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+.message-item { background: white; padding: 18px; border-radius: 20px; margin-bottom: 15px; }
 .message-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
 .message-form input, .message-form textarea { width: 100%; padding: 16px; border: 2px solid #eee; border-radius: 20px; margin-bottom: 15px; background: white; font-size: 15px; }
-.message-form button { background: #9b87f5; color: white; border: none; padding: 16px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.message-form button { background: #9b87f5; color: white; border: none; padding: 16px; width: 100%; border-radius: 60px; font-weight: 600; font-size: 16px; cursor: pointer; }
 .qr-section { text-align: center; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 20px; }
 .qr-section h4 { margin-bottom: 15px; }
 .qr-section canvas { border-radius: 10px; }
